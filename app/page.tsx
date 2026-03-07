@@ -10,6 +10,7 @@ type Program = {
   funding_type: string | null;
   deadline: string | null;
   official_url: string | null;
+  image_url: string | null;
   verification_status: string | null;
   created_at?: string | null;
 };

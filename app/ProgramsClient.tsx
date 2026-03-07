@@ -5,17 +5,15 @@ import { useMemo, useState } from "react";
 type Program = {
   id: string;
   title: string;
-  type: string | null;
+  slug: string | null;
   country: string | null;
+  type: string | null;
   funding_type: string | null;
   deadline: string | null;
   official_url: string | null;
   image_url: string | null;
   verification_status: string | null;
   created_at: string | null;
-  slug: string | null;
-  
-  
 };
 
 function Badge({ status }: { status?: string | null }) {
