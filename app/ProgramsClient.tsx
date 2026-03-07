@@ -12,6 +12,9 @@ type Program = {
   official_url: string | null;
   image_url: string | null;
   verification_status: string | null;
+  created_at: string | null;
+  slug: string | null;
+  
   
 };
 
