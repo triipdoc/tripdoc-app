@@ -1,19 +1,6 @@
 import CopyLinkButton from "./CopyLinkButton";
 import { supabase } from "../../../lib/supabase";
-
-type Program = {
-  id: string;
-  title: string;
-  slug: string | null;
-  country: string | null;
-  type: string | null;
-  funding_type: string | null;
-  deadline: string | null;
-  official_url: string | null;
-  image_url: string | null;
-  description: string | null;
-  verification_status: string | null;
-};
+import type { Metadata } from "next";
 
 export async function generateMetadata({
   params,
@@ -30,17 +17,18 @@ export async function generateMetadata({
 
   if (!data) {
     return {
-      title: "Program Not Found | TripDoc",
+      title: "Opportunity Not Found | TripDoc",
       description: "The requested opportunity could not be found on TripDoc.",
     };
   }
 
   const title = `${data.title} | TripDoc`;
+
   const description = `Apply for ${data.title}${
     data.country ? ` in ${data.country}` : ""
   }${data.funding_type ? `. Funding: ${data.funding_type}` : ""}${
     data.type ? `. Type: ${data.type}` : ""
-  }. Find deadline, official link, and details on TripDoc.`;
+  }. Find deadline, official link, and full details on TripDoc.`;
 
   return {
     title,
@@ -59,8 +47,20 @@ export async function generateMetadata({
     },
   };
 }
-import type { Metadata } from "next";
 
+type Program = {
+  id: string;
+  title: string;
+  slug: string | null;
+  country: string | null;
+  type: string | null;
+  funding_type: string | null;
+  deadline: string | null;
+  official_url: string | null;
+  image_url: string | null;
+  description: string | null;
+  verification_status: string | null;
+};
 
 export default async function ProgramDetailPage({
   params,
