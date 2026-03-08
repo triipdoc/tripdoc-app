@@ -52,31 +52,42 @@ export default async function ProgramDetailPage({
     .single();
 
   if (error || !data) {
-    return (
-      <main style={{ padding: 40, fontFamily: "Arial" }}>
-        <h1>Program not found</h1>
-      </main>
-    );
-  }
+  return (
+    <main style={{ padding: 40, fontFamily: "Arial" }}>
+      <a
+        href="/"
+        style={{
+          display: "inline-block",
+          marginBottom: 20,
+          textDecoration: "none",
+          color: "#0070f3",
+          fontWeight: 600,
+        }}
+      >
+        ← Back to home
+      </a>
+
+      <h1>Program not found</h1>
+    </main>
+  );
+}
 
   const program = data as Program;
 
   return (
-    <main style={{ padding: 40, fontFamily: "Arial", maxWidth: 900 }}>
-      <p style={{ marginBottom: 10, opacity: 0.7 }}>TripDoc / Programs</p>
-      {program.image_url && (
-        <img
-          src={program.image_url}
-          alt={program.title}
-          style={{
-            width: "100%",
-            maxHeight: 320,
-            objectFit: "cover",
-            borderRadius: 12,
-            marginBottom: 20,
-          }}
-        />
-      )}
+  <main style={{ padding: 40, fontFamily: "Arial" }}>
+    <a
+      href="/"
+      style={{
+        display: "inline-block",
+        marginBottom: 20,
+        textDecoration: "none",
+        color: "#0070f3",
+        fontWeight: 600,
+      }}
+    >
+      ← Back to home
+    </a>
       <h1 style={{ fontSize: 32, marginBottom: 20 }}>{program.title}</h1>
 
       <div
