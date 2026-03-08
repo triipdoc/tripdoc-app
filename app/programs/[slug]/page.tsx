@@ -19,24 +19,48 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
-}) {
+}): Promise<Metadata> {
   const { slug } = await params;
 
   const { data } = await supabase
     .from("programs")
-    .select("*")
+    .select("title, country, funding_type, type")
     .eq("slug", slug)
     .single();
 
-  if (!data) return {};
+  if (!data) {
+    return {
+      title: "Program Not Found | TripDoc",
+      description: "The requested opportunity could not be found on TripDoc.",
+    };
+  }
+
+  const title = `${data.title} | TripDoc`;
+  const description = `Apply for ${data.title}${
+    data.country ? ` in ${data.country}` : ""
+  }${data.funding_type ? `. Funding: ${data.funding_type}` : ""}${
+    data.type ? `. Type: ${data.type}` : ""
+  }. Find deadline, official link, and details on TripDoc.`;
 
   return {
-    title: data.title + " | TripDoc",
-    description:
-      data.description ||
-      "Verified scholarships, internships and research opportunities.",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://app.tripdoc.net/programs/${slug}`,
+      siteName: "TripDoc",
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
+import type { Metadata } from "next";
+
 
 export default async function ProgramDetailPage({
   params,
