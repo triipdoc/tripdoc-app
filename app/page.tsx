@@ -132,7 +132,80 @@ Recently added verified programs on TripDoc.
           </div>
         ))}
       </div>
+<div style={{ marginTop: 60 }}>
+  <h2 style={{ marginBottom: 10 }}>Browse by Category</h2>
+  <p style={{ color: "#666", marginBottom: 20 }}>
+    Explore opportunities by category.
+  </p>
 
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: 16,
+    }}
+  >
+    <a
+      href="/category/scholarship"
+      style={{
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        padding: 20,
+        textDecoration: "none",
+        color: "black",
+        background: "white",
+        fontWeight: 600,
+      }}
+    >
+      🎓 Scholarships
+    </a>
+
+    <a
+      href="/category/internship"
+      style={{
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        padding: 20,
+        textDecoration: "none",
+        color: "black",
+        background: "white",
+        fontWeight: 600,
+      }}
+    >
+      💼 Internships
+    </a>
+
+    <a
+      href="/category/research"
+      style={{
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        padding: 20,
+        textDecoration: "none",
+        color: "black",
+        background: "white",
+        fontWeight: 600,
+      }}
+    >
+      🔬 Research
+    </a>
+
+    <a
+      href="/category/fellowship"
+      style={{
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        padding: 20,
+        textDecoration: "none",
+        color: "black",
+        background: "white",
+        fontWeight: 600,
+      }}
+    >
+      🌍 Fellowships
+    </a>
+  </div>
+</div>
       <div style={{ marginTop: 60 }}>
   <ProgramsClient programs={programs} />
 </div>

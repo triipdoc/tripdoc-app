@@ -54,15 +54,31 @@ export default function RootLayout({
       TripDoc
     </a>
 
-    <div style={{ display: "flex", gap: 20 }}>
-      <a href="/" style={{ textDecoration: "none", color: "#444" }}>
-        Home
-      </a>
+    <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+  <a href="/" style={{ textDecoration: "none", color: "#444" }}>
+    Home
+  </a>
 
-      <a href="/admin" style={{ textDecoration: "none", color: "#444" }}>
-        Admin
-      </a>
-    </div>
+  <a href="/category/scholarship" style={{ textDecoration: "none", color: "#444" }}>
+    Scholarships
+  </a>
+
+  <a href="/category/internship" style={{ textDecoration: "none", color: "#444" }}>
+    Internships
+  </a>
+
+  <a href="/category/research" style={{ textDecoration: "none", color: "#444" }}>
+    Research
+  </a>
+
+  <a href="/category/fellowship" style={{ textDecoration: "none", color: "#444" }}>
+    Fellowships
+  </a>
+
+  <a href="/admin" style={{ textDecoration: "none", color: "#444" }}>
+    Admin
+  </a>
+</div>
   </div>
 </header>
 
