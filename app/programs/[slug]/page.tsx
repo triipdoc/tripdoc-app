@@ -197,27 +197,70 @@ const relatedPrograms = relatedData || [];
         </div>
 
         {/* APPLY + SHARE */}
-        <div style={{ marginBottom: 30, display: "flex", gap: 12 }}>
-          <a
-            href={program.official_url || "#"}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              padding: "14px 22px",
-              background: "#0070f3",
-              color: "white",
-              borderRadius: 8,
-              textDecoration: "none",
-              fontWeight: 600,
-              pointerEvents: program.official_url ? "auto" : "none",
-              opacity: program.official_url ? 1 : 0.6,
-            }}
-          >
-            Apply Now
-          </a>
+      <div
+  style={{
+    marginBottom: 30,
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+  }}
+>
+  <a
+    href={program.official_url || "#"}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      padding: "14px 22px",
+      background: "#0070f3",
+      color: "white",
+      borderRadius: 8,
+      textDecoration: "none",
+      fontWeight: 600,
+      pointerEvents: program.official_url ? "auto" : "none",
+      opacity: program.official_url ? 1 : 0.6,
+    }}
+  >
+    Apply Now
+  </a>
 
-          <CopyLinkButton />
-        </div>
+  <CopyLinkButton />
+
+  <a
+    href={`https://wa.me/?text=${encodeURIComponent(
+      `${program.title} - https://app.tripdoc.net/programs/${program.slug}`
+    )}`}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      padding: "14px 18px",
+      background: "#25D366",
+      color: "white",
+      borderRadius: 8,
+      textDecoration: "none",
+      fontWeight: 600,
+    }}
+  >
+    WhatsApp
+  </a>
+
+  <a
+    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+      `https://app.tripdoc.net/programs/${program.slug}`
+    )}`}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      padding: "14px 18px",
+      background: "#0A66C2",
+      color: "white",
+      borderRadius: 8,
+      textDecoration: "none",
+      fontWeight: 600,
+    }}
+  >
+    LinkedIn
+  </a>
+</div>
 
         {/* DESCRIPTION */}
         {program.description && (
