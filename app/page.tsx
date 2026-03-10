@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import ProgramsClient from "./ProgramsClient";
+import HorizontalRow from "./components/HorizontalRow";
 
 type Program = {
   id: string;
@@ -15,11 +16,26 @@ type Program = {
   created_at?: string | null;
 };
 
+const quickCardStyle = {
+  border: "1px solid #ddd",
+  borderRadius: 10,
+  padding: "12px 16px",
+  textDecoration: "none",
+  color: "black",
+  background: "white",
+  fontWeight: 600,
+  fontSize: 16,
+  display: "flex",
+  alignItems: "center",
+  minHeight: 52,
+  minWidth: 180,
+} as const;
+
 export default async function Home() {
   const { data, error } = await supabase
     .from("programs")
     .select(
-      "id,title,slug,type,country,funding_type,deadline,official_url,official_url,image_url,verification_status,created_at"
+      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,created_at"
     )
     .order("created_at", { ascending: false });
 
@@ -46,169 +62,231 @@ export default async function Home() {
   });
 
   const newlyAdded = programs.slice(0, 4);
+  const trending = programs.slice(0, 3);
 
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: 32 }}>
       <div style={{ marginBottom: 40 }}>
-  <h1 style={{ fontSize: 42, marginBottom: 10 }}>
-    Discover Verified Global Opportunities
-  </h1>
+        <h1 style={{ fontSize: 42, marginBottom: 10 }}>
+          Discover Verified Global Opportunities
+        </h1>
 
-  <p style={{ fontSize: 18, color: "#555", maxWidth: 700 }}>
-    TripDoc helps students and professionals find verified scholarships,
-    internships, fellowships, and research programs worldwide.
-  </p>
-</div>
+        <p style={{ fontSize: 18, color: "#555", maxWidth: 700 }}>
+          TripDoc helps students and professionals find verified scholarships,
+          internships, fellowships, and research programs worldwide.
+        </p>
+      </div>
 
-      <h2 style={{ marginTop: 40, marginBottom: 10 }}>
-🔥 Closing Soon
-</h2>
+      {/* Browse by Category */}
+      <div style={{ marginTop: 60 }}>
+        <h2 style={{ marginBottom: 10 }}>Browse by Category</h2>
+        <p style={{ color: "#666", marginBottom: 20 }}>
+          Explore opportunities by category.
+        </p>
 
-<p style={{ color: "#666", marginBottom: 20 }}>
-Applications ending within the next 7 days.
-</p>
+        <HorizontalRow>
+          <a
+            href="/category/scholarship"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🎓 Scholarships
+          </a>
 
-      <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+          <a
+            href="/category/internship"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            💼 Internships
+          </a>
+
+          <a
+            href="/category/research"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🔬 Research
+          </a>
+
+          <a
+            href="/category/fellowship"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🌍 Fellowships
+          </a>
+        </HorizontalRow>
+      </div>
+
+      {/* Browse by Country */}
+      <div style={{ marginTop: 60 }}>
+        <h2 style={{ marginBottom: 10 }}>Browse by Country</h2>
+        <p style={{ color: "#666", marginBottom: 20 }}>
+          Explore opportunities by destination country.
+        </p>
+
+        <HorizontalRow>
+          <a
+            href="/country/germany"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🇩🇪 Germany
+          </a>
+
+          <a
+            href="/country/canada"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🇨🇦 Canada
+          </a>
+
+          <a
+            href="/country/netherlands"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🇳🇱 Netherlands
+          </a>
+
+          <a
+            href="/country/australia"
+            style={quickCardStyle}
+            className="horizontal-card"
+          >
+            🇦🇺 Australia
+          </a>
+        </HorizontalRow>
+      </div>
+
+      {/* Closing Soon */}
+      <div style={{ marginTop: 60 }}>
+        <h2 style={{ marginBottom: 10 }}>🔥 Closing Soon</h2>
+        <p style={{ color: "#666", marginBottom: 20 }}>
+          Applications ending within the next 7 days.
+        </p>
+
         {closingSoon.length === 0 ? (
           <p>No urgent deadlines right now.</p>
         ) : (
-          closingSoon.map((p) => (
+          <HorizontalRow>
+            {closingSoon.map((p) => (
+              <div
+                key={p.id}
+                className="horizontal-card"
+                style={{
+                  border: "1px solid #e5e5e5",
+                  padding: 16,
+                  borderRadius: 12,
+                  background: "white",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+              >
+                <a
+                  href={`/programs/${p.slug}`}
+                  style={{
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    color: "black",
+                  }}
+                >
+                  {p.title}
+                </a>
+
+                <div style={{ fontSize: 14, marginTop: 6 }}>
+                  Deadline: {p.deadline}
+                </div>
+              </div>
+            ))}
+          </HorizontalRow>
+        )}
+      </div>
+
+      {/* Newly Added */}
+      <div style={{ marginTop: 60 }}>
+        <h2 style={{ marginBottom: 10 }}>🆕 Newly Added Opportunities</h2>
+        <p style={{ color: "#666", marginBottom: 20 }}>
+          Recently added verified programs on TripDoc.
+        </p>
+
+        <HorizontalRow>
+          {newlyAdded.map((p) => (
             <div
               key={p.id}
-             style={{
-  border: "1px solid #e5e5e5",
-  padding: 20,
-  borderRadius: 12,
-  background: "white",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-  transition: "all 0.2s ease",
-  cursor: "pointer",
-}}
+              className="horizontal-card"
+              style={{
+                border: "1px solid #ddd",
+                padding: 16,
+                borderRadius: 10,
+                background: "#fafafa",
+              }}
             >
               <a
                 href={`/programs/${p.slug}`}
-                style={{ fontWeight: 600, textDecoration: "none", color: "black" }}
+                style={{
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  color: "black",
+                }}
               >
                 {p.title}
               </a>
 
               <div style={{ fontSize: 14, marginTop: 6 }}>
-                Deadline: {p.deadline}
+                {p.country || "—"} • {p.funding_type || "—"}
               </div>
             </div>
-          ))
-        )}
+          ))}
+        </HorizontalRow>
       </div>
 
-      <h2 style={{ marginTop: 50, marginBottom: 10 }}>
-🆕 Newly Added Opportunities
-</h2>
-
-<p style={{ color: "#666", marginBottom: 20 }}>
-Recently added verified programs on TripDoc.
-</p>
-
-      <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
-        {newlyAdded.map((p) => (
-          <div
-            key={p.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: 16,
-              borderRadius: 10,
-              background: "#fafafa",
-            }}
-          >
-            <a
-              href={`/programs/${p.slug}`}
-              style={{ fontWeight: 600, textDecoration: "none", color: "black" }}
-            >
-              {p.title}
-            </a>
-
-            <div style={{ fontSize: 14, marginTop: 6 }}>
-              {p.country || "—"} • {p.funding_type || "—"}
-            </div>
-          </div>
-        ))}
-      </div>
-<div style={{ marginTop: 60 }}>
-  <h2 style={{ marginBottom: 10 }}>Browse by Category</h2>
-  <p style={{ color: "#666", marginBottom: 20 }}>
-    Explore opportunities by category.
-  </p>
-
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-      gap: 16,
-    }}
-  >
-    <a
-      href="/category/scholarship"
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 20,
-        textDecoration: "none",
-        color: "black",
-        background: "white",
-        fontWeight: 600,
-      }}
-    >
-      🎓 Scholarships
-    </a>
-
-    <a
-      href="/category/internship"
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 20,
-        textDecoration: "none",
-        color: "black",
-        background: "white",
-        fontWeight: 600,
-      }}
-    >
-      💼 Internships
-    </a>
-
-    <a
-      href="/category/research"
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 20,
-        textDecoration: "none",
-        color: "black",
-        background: "white",
-        fontWeight: 600,
-      }}
-    >
-      🔬 Research
-    </a>
-
-    <a
-      href="/category/fellowship"
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 20,
-        textDecoration: "none",
-        color: "black",
-        background: "white",
-        fontWeight: 600,
-      }}
-    >
-      🌍 Fellowships
-    </a>
-  </div>
-</div>
+      {/* Trending */}
       <div style={{ marginTop: 60 }}>
-  <ProgramsClient programs={programs} />
-</div>
+        <h2 style={{ marginBottom: 10 }}>🔥 Trending Opportunities</h2>
+        <p style={{ color: "#666", marginBottom: 20 }}>
+          Recently added and popular opportunities on TripDoc.
+        </p>
+
+        <HorizontalRow>
+          {trending.map((p) => (
+            <div
+              key={p.id}
+              className="horizontal-card"
+              style={{
+                border: "1px solid #ddd",
+                padding: 16,
+                borderRadius: 10,
+                background: "#fafafa",
+              }}
+            >
+              <a
+                href={`/programs/${p.slug}`}
+                style={{
+                  fontSize: 18,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  color: "black",
+                }}
+              >
+                {p.title}
+              </a>
+
+              <div style={{ marginTop: 6 }}>
+                {p.country || "—"} • {p.funding_type || "—"}
+              </div>
+            </div>
+          ))}
+        </HorizontalRow>
+      </div>
+
+      {/* Search + Filters + Main Listing */}
+      <div style={{ marginTop: 80 }}>
+        <ProgramsClient programs={programs} />
+      </div>
     </main>
   );
 }
