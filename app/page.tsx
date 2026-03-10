@@ -14,6 +14,7 @@ type Program = {
   image_url: string | null;
   verification_status: string | null;
   created_at?: string | null;
+  featured?: boolean | null;
 };
 
 const quickCardStyle = {
@@ -48,6 +49,7 @@ export default async function Home() {
   }
 
   const programs = (data || []) as Program[];
+  const featuredPrograms = programs.filter((p) => p.featured).slice(0, 6);
 
   const closingSoon = programs.filter((p) => {
     if (!p.deadline) return false;
@@ -160,7 +162,147 @@ export default async function Home() {
           </a>
         </HorizontalRow>
       </div>
+{/* Featured Opportunities */}
+{featuredPrograms.length > 0 && (
+  <div style={{ marginTop: 60 }}>
+    <h2 style={{ marginBottom: 10 }}>⭐ Featured Opportunities</h2>
+    <p style={{ color: "#666", marginBottom: 20 }}>
+      Hand-picked opportunities highlighted on TripDoc.
+    </p>
 
+    <HorizontalRow>
+      {featuredPrograms.map((p) => (
+        <div
+          key={p.id}
+          className="horizontal-card"
+          style={{
+            border: "1px solid #ddd",
+            padding: 16,
+            borderRadius: 10,
+            background: "#fafafa",
+          }}
+        >
+          {p.image_url && (
+            <img
+              src={p.image_url}
+              alt={p.title}
+              style={{
+                width: "100%",
+                height: 140,
+                objectFit: "cover",
+                borderRadius: 8,
+                marginBottom: 10,
+                display: "block",
+              }}
+            />
+          )}
+
+          <a
+            href={`/programs/${p.slug}`}
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              textDecoration: "none",
+              color: "black",
+            }}
+          >
+            {p.title}
+          </a>
+
+          <div
+  style={{
+    display: "inline-block",
+    marginBottom: 10,
+    padding: "6px 10px",
+    background: "#fff4d6",
+    color: "#8a5a00",
+    borderRadius: 8,
+    fontWeight: 600,
+    fontSize: 13,
+  }}
+>
+  ⭐ Featured
+</div>
+
+          <div style={{ marginTop: 6 }}>
+            {p.country || "—"} • {p.funding_type || "—"}
+          </div>
+        </div>
+      ))}
+    </HorizontalRow>
+  </div>
+)}
+
+{featuredPrograms.length > 0 && (
+  <div style={{ marginTop: 60 }}>
+    <h2 style={{ marginBottom: 10 }}>⭐ Featured Opportunities</h2>
+    <p style={{ color: "#666", marginBottom: 20 }}>
+      Hand-picked opportunities highlighted on TripDoc.
+    </p>
+
+    <HorizontalRow>
+      {featuredPrograms.map((p) => (
+        <div
+          key={p.id}
+          className="horizontal-card"
+          style={{
+            border: "1px solid #ddd",
+            padding: 16,
+            borderRadius: 10,
+            background: "#fafafa",
+          }}
+        >
+          {p.image_url && (
+            <img
+              src={p.image_url}
+              alt={p.title}
+              style={{
+                width: "100%",
+                height: 140,
+                objectFit: "cover",
+                borderRadius: 8,
+                marginBottom: 10,
+                display: "block",
+              }}
+            />
+          )}
+
+          <a
+            href={`/programs/${p.slug}`}
+            style={{
+              fontSize: 18,
+              fontWeight: 600,
+              textDecoration: "none",
+              color: "black",
+            }}
+          >
+            {p.title}
+          </a>
+          {p.featured && (
+  <div
+    style={{
+      display: "inline-block",
+      marginBottom: 10,
+      padding: "6px 10px",
+      background: "#fff4d6",
+      color: "#8a5a00",
+      borderRadius: 8,
+      fontWeight: 600,
+      fontSize: 13,
+    }}
+  >
+    ⭐ Featured
+  </div>
+)}
+
+          <div style={{ marginTop: 6 }}>
+            {p.country || "—"} • {p.funding_type || "—"}
+          </div>
+        </div>
+      ))}
+    </HorizontalRow>
+  </div>
+)}
       {/* Closing Soon */}
       <div style={{ marginTop: 60 }}>
         <h2 style={{ marginBottom: 10 }}>🔥 Closing Soon</h2>
@@ -186,6 +328,20 @@ export default async function Home() {
                   cursor: "pointer",
                 }}
               >
+                {p.image_url && (
+  <img
+    src={p.image_url}
+    alt={p.title}
+    style={{
+      width: "100%",
+      height: 140,
+      objectFit: "cover",
+      borderRadius: 8,
+      marginBottom: 10,
+      display: "block",
+    }}
+  />
+)}
                 <a
                   href={`/programs/${p.slug}`}
                   style={{
@@ -196,6 +352,23 @@ export default async function Home() {
                 >
                   {p.title}
                 </a>
+
+                {p.featured && (
+  <div
+    style={{
+      display: "inline-block",
+      marginBottom: 10,
+      padding: "6px 10px",
+      background: "#fff4d6",
+      color: "#8a5a00",
+      borderRadius: 8,
+      fontWeight: 600,
+      fontSize: 13,
+    }}
+  >
+    ⭐ Featured
+  </div>
+)}
 
                 <div style={{ fontSize: 14, marginTop: 6 }}>
                   Deadline: {p.deadline}
@@ -225,6 +398,20 @@ export default async function Home() {
                 background: "#fafafa",
               }}
             >
+              {p.image_url && (
+  <img
+    src={p.image_url}
+    alt={p.title}
+    style={{
+      width: "100%",
+      height: 140,
+      objectFit: "cover",
+      borderRadius: 8,
+      marginBottom: 10,
+      display: "block",
+    }}
+  />
+)}
               <a
                 href={`/programs/${p.slug}`}
                 style={{
@@ -252,34 +439,49 @@ export default async function Home() {
         </p>
 
         <HorizontalRow>
-          {trending.map((p) => (
-            <div
-              key={p.id}
-              className="horizontal-card"
-              style={{
-                border: "1px solid #ddd",
-                padding: 16,
-                borderRadius: 10,
-                background: "#fafafa",
-              }}
-            >
-              <a
-                href={`/programs/${p.slug}`}
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  color: "black",
-                }}
-              >
-                {p.title}
-              </a>
+      {trending.map((p) => (
+  <div
+    key={p.id}
+    className="horizontal-card"
+    style={{
+      border: "1px solid #ddd",
+      padding: 16,
+      borderRadius: 10,
+      background: "#fafafa",
+      minWidth: 260,
+    }}
+  >
+    {p.image_url && (
+      <img
+        src={p.image_url}
+        alt={p.title}
+        style={{
+          width: "100%",
+          height: 140,
+          objectFit: "cover",
+          borderRadius: 8,
+          marginBottom: 10,
+        }}
+      />
+    )}
 
-              <div style={{ marginTop: 6 }}>
-                {p.country || "—"} • {p.funding_type || "—"}
-              </div>
-            </div>
-          ))}
+    <a
+      href={`/programs/${p.slug}`}
+      style={{
+        fontSize: 18,
+        fontWeight: 600,
+        textDecoration: "none",
+        color: "black",
+      }}
+    >
+      {p.title}
+    </a>
+
+    <div style={{ marginTop: 6 }}>
+      {p.country || "—"} • {p.funding_type || "—"}
+    </div>
+  </div>
+))}
         </HorizontalRow>
       </div>
 

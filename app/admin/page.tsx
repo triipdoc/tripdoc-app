@@ -14,6 +14,7 @@ type Program = {
   image_url: string | null;
   description: string | null;
   verification_status: string | null;
+  featured?: boolean | null;
 };
 
 function generateSlug(text: string) {
@@ -31,26 +32,14 @@ export default function AdminPage() {
   const [type, setType] = useState("");
   const [funding, setFunding] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [description, setDescription] = useState("")
+  const [description, setDescription] = useState("");
   const [officialUrl, setOfficialUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  
-  <textarea
-  placeholder="Program Description"
-  value={description}
-  onChange={(e) => setDescription(e.target.value)}
-  style={{
-    padding: 12,
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    minHeight: 120,
-    resize: "vertical"
-  }}
-/>
+  const [featured, setFeatured] = useState(false);
+
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  
 
   const loadPrograms = async () => {
     const { data, error } = await supabase
@@ -70,6 +59,19 @@ export default function AdminPage() {
     loadPrograms();
   }, []);
 
+  const resetForm = () => {
+    setTitle("");
+    setCountry("");
+    setType("");
+    setFunding("");
+    setDeadline("");
+    setDescription("");
+    setOfficialUrl("");
+    setImageUrl("");
+    setFeatured(false);
+    setEditingId(null);
+  };
+
   const addProgram = async () => {
     setLoading(true);
 
@@ -85,6 +87,7 @@ export default function AdminPage() {
         image_url: imageUrl,
         description,
         verification_status: "verified",
+        featured,
       },
     ]);
 
@@ -97,60 +100,42 @@ export default function AdminPage() {
     }
 
     alert("Program added!");
-
-    setTitle("");
-    setCountry("");
-    setType("");
-    setFunding("");
-    setDeadline("");
-    setOfficialUrl("");
-    setImageUrl("")
-    setDescription("")
-
+    resetForm();
     loadPrograms();
   };
 
   const updateProgram = async () => {
+    if (!editingId) return;
 
-  if (!editingId) return
+    setLoading(true);
 
-  const { error } = await supabase
-    .from("programs")
-    .update({
-      title,
-      slug: generateSlug(title),
-      country,
-      type,
-      funding_type: funding,
-      deadline,
-      image_url: imageUrl,
-      description,
-      official_url: officialUrl
-      
-      
-    })
-    .eq("id", editingId)
+    const { error } = await supabase
+      .from("programs")
+      .update({
+        title,
+        slug: generateSlug(title),
+        country,
+        type,
+        funding_type: funding,
+        deadline,
+        image_url: imageUrl,
+        description,
+        official_url: officialUrl,
+        featured,
+      })
+      .eq("id", editingId);
 
-  if (error) {
-    alert(error.message)
-    return
-  }
+    setLoading(false);
 
-  alert("Program updated!")
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
-  setEditingId(null)
-
-  setTitle("")
-  setCountry("")
-  setType("")
-  setFunding("")
-  setDeadline("")
-  setDescription("")
-  setOfficialUrl("")
-  
-
-  loadPrograms()
-}
+    alert("Program updated!");
+    resetForm();
+    loadPrograms();
+  };
 
   const deleteProgram = async (id: string) => {
     const confirmDelete = window.confirm("Delete this program?");
@@ -169,20 +154,17 @@ export default function AdminPage() {
   };
 
   const startEdit = (program: Program) => {
-
-  setEditingId(program.id)
-
-  setTitle(program.title || "")
-  setCountry(program.country || "")
-  setType(program.type || "")
-  setFunding(program.funding_type || "")
-  setDeadline(program.deadline || "")
-  setOfficialUrl(program.official_url || "")
-  setImageUrl(program.image_url || "")
-  setDescription(program.description || "")
-  
-  
-}
+    setEditingId(program.id);
+    setTitle(program.title || "");
+    setCountry(program.country || "");
+    setType(program.type || "");
+    setFunding(program.funding_type || "");
+    setDeadline(program.deadline || "");
+    setOfficialUrl(program.official_url || "");
+    setImageUrl(program.image_url || "");
+    setDescription(program.description || "");
+    setFeatured(Boolean(program.featured));
+  };
 
   return (
     <main style={{ padding: 40, fontFamily: "Arial" }}>
@@ -239,49 +221,105 @@ export default function AdminPage() {
         />
 
         <input
-  placeholder="Image URL"
-  value={imageUrl}
-  onChange={(e) => setImageUrl(e.target.value)}
-  style={{ padding: 12, borderRadius: 8, border: "1px solid #ddd" }}
-/>
+          placeholder="Image URL"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          style={{ padding: 12, borderRadius: 8, border: "1px solid #ddd" }}
+        />
+
+        {imageUrl && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+              Image Preview
+            </div>
+
+            <img
+              src={imageUrl}
+              alt="Preview"
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                height: 180,
+                objectFit: "cover",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+              }}
+            />
+          </div>
+        )}
 
         <textarea
-  placeholder="Program Description"
-  value={description}
-  onChange={(e) => setDescription(e.target.value)}
-  style={{
-    padding: 12,
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    minHeight: 120,
-    resize: "vertical"
-  }}
-/>
+          placeholder="Program Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ddd",
+            minHeight: 120,
+            resize: "vertical",
+          }}
+        />
 
-    <div style={{ marginTop: 8 }}>
-  <button
-    onClick={editingId ? updateProgram : addProgram}
-    disabled={loading}
-    style={{
-      padding: "12px 16px",
-      background: "black",
-      color: "white",
-      borderRadius: 8,
-      border: "none",
-      cursor: "pointer",
-      fontSize: 16,
-      fontWeight: 600,
-      width: "fit-content",
-      minWidth: 180,
-    }}
-  >
-    {loading
-      ? "Saving..."
-      : editingId
-      ? "Update Opportunity"
-      : "Save Opportunity"}
-  </button>
-</div>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontWeight: 600,
+            marginTop: 4,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={featured}
+            onChange={(e) => setFeatured(e.target.checked)}
+          />
+          Featured Opportunity
+        </label>
+
+        <div style={{ marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={editingId ? updateProgram : addProgram}
+            disabled={loading}
+            style={{
+              padding: "12px 16px",
+              background: "black",
+              color: "white",
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              fontSize: 16,
+              fontWeight: 600,
+              width: "fit-content",
+              minWidth: 180,
+            }}
+          >
+            {loading
+              ? "Saving..."
+              : editingId
+              ? "Update Opportunity"
+              : "Save Opportunity"}
+          </button>
+
+          {editingId && (
+            <button
+              onClick={resetForm}
+              style={{
+                padding: "12px 16px",
+                background: "#eee",
+                color: "#333",
+                borderRadius: 8,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 16,
+                fontWeight: 600,
+              }}
+            >
+              Cancel Edit
+            </button>
+          )}
+        </div>
       </div>
 
       <h2 style={{ marginBottom: 16 }}>All Programs</h2>
@@ -297,41 +335,68 @@ export default function AdminPage() {
               background: "#fafafa",
             }}
           >
-            <h3 style={{ marginTop: 0 }}>{program.title}</h3>
-            <p><strong>Country:</strong> {program.country || "—"}</p>
-            <p><strong>Type:</strong> {program.type || "—"}</p>
-            <p><strong>Funding:</strong> {program.funding_type || "—"}</p>
-            <p><strong>Deadline:</strong> {program.deadline || "—"}</p>
+            <h3 style={{ marginTop: 0, marginBottom: 10 }}>{program.title}</h3>
 
-            <button
-              onClick={() => deleteProgram(program.id)}
-              style={{
-                marginTop: 10,
-                padding: "10px 14px",
-                background: "#c62828",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              Delete
-            </button>
-            <button
-  onClick={() => startEdit(program)}
-  style={{
-    marginLeft: 10,
-    padding: "10px 14px",
-    background: "#1976d2",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
-    
-  }}
->
-Edit
-</button>
+            {program.featured && (
+              <div
+                style={{
+                  display: "inline-block",
+                  marginBottom: 10,
+                  padding: "6px 10px",
+                  background: "#fff4d6",
+                  color: "#8a5a00",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 13,
+                }}
+              >
+                ⭐ Featured
+              </div>
+            )}
+
+            <p>
+              <strong>Country:</strong> {program.country || "—"}
+            </p>
+            <p>
+              <strong>Type:</strong> {program.type || "—"}
+            </p>
+            <p>
+              <strong>Funding:</strong> {program.funding_type || "—"}
+            </p>
+            <p>
+              <strong>Deadline:</strong> {program.deadline || "—"}
+            </p>
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                onClick={() => deleteProgram(program.id)}
+                style={{
+                  padding: "10px 14px",
+                  background: "#c62828",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+
+              <button
+                onClick={() => startEdit(program)}
+                style={{
+                  marginLeft: 10,
+                  padding: "10px 14px",
+                  background: "#1976d2",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+              >
+                Edit
+              </button>
+            </div>
           </div>
         ))}
       </div>

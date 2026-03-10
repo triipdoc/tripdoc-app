@@ -1,6 +1,7 @@
 import CopyLinkButton from "./CopyLinkButton";
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
+import StickyApplyBar from "./StickyApplyBar";
 
 export async function generateMetadata({
   params,
@@ -152,20 +153,122 @@ const relatedPrograms = relatedData || [];
 
         {/* QUICK INFO */}
         <div
-          style={{
-            display: "flex",
-            gap: 20,
-            flexWrap: "wrap",
-            marginBottom: 24,
-            color: "#555",
-            fontSize: 15,
-          }}
-        >
-          <div>🌍 {program.country || "—"}</div>
-          <div>📚 {program.type || "—"}</div>
-          <div>💰 {program.funding_type || "—"}</div>
-          <div>📅 {program.deadline || "—"}</div>
-        </div>
+  style={{
+    marginBottom: 28,
+    border: "1px solid #e5e5e5",
+    borderRadius: 14,
+    padding: 22,
+    background: "#fafafa",
+  }}
+>
+  <h2
+    style={{
+      marginTop: 0,
+      marginBottom: 16,
+      fontSize: 22,
+    }}
+  >
+    Quick Overview
+  </h2>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+      gap: 14,
+    }}
+  >
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #eee",
+        borderRadius: 10,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Country
+      </div>
+      <div style={{ fontWeight: 600 }}>🌍 {program.country || "—"}</div>
+    </div>
+
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #eee",
+        borderRadius: 10,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Type
+      </div>
+      <div style={{ fontWeight: 600 }}>📚 {program.type || "—"}</div>
+    </div>
+
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #eee",
+        borderRadius: 10,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Funding
+      </div>
+      <div style={{ fontWeight: 600 }}>💰 {program.funding_type || "—"}</div>
+    </div>
+
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #eee",
+        borderRadius: 10,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Deadline
+      </div>
+      <div style={{ fontWeight: 600 }}>📅 {program.deadline || "—"}</div>
+    </div>
+
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #eee",
+        borderRadius: 10,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Verification
+      </div>
+      <div style={{ fontWeight: 600 }}>
+        {program.verification_status === "verified"
+          ? "✅ Verified"
+          : "⏳ Pending"}
+      </div>
+    </div>
+
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #eee",
+        borderRadius: 10,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+        Official Link
+      </div>
+      <div style={{ fontWeight: 600 }}>
+        {program.official_url ? "🔗 Available" : "— Not added yet"}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* VERIFIED BADGE */}
         <div style={{ marginBottom: 20 }}>
@@ -322,6 +425,7 @@ const relatedPrograms = relatedData || [];
           </div>
         )}
       </div>
+      <StickyApplyBar title={program.title} url={program.official_url} />
     </main>
   );
 }
