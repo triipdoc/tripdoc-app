@@ -86,17 +86,28 @@ export default function RootLayout({
               flexWrap: "wrap",
             }}
           >
-            <a
+           <a
               href="/"
               style={{
-                fontWeight: 700,
-                fontSize: 20,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
                 textDecoration: "none",
                 color: "black",
-                whiteSpace: "nowrap",
+                fontWeight: 700,
+                fontSize: 20,
               }}
             >
-              TripDoc
+              <img
+                src="/logo.png"
+                alt="TripDoc Logo"
+                style={{
+                  height: 32,
+                  width: "auto",
+                  display: "block",
+                }}
+              />
+              <span>TripDoc</span>
             </a>
 
             <nav
