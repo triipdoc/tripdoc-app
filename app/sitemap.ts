@@ -3,27 +3,50 @@ import { supabase } from "../lib/supabase";
 
 type SitemapProgram = {
   slug: string | null;
+  country: string | null;
+  type: string | null;
   created_at: string | null;
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = "https://app.tripdoc.net";
+
   const { data } = await supabase
     .from("programs")
-    .select("slug, created_at");
+    .select("slug,country,type,created_at");
 
-  const programs =
-    ((data as SitemapProgram[] | null) ?? [])
-      .filter((p) => p.slug)
-      .map((p) => ({
-        url: `https://app.tripdoc.net/programs/${p.slug}`,
-        lastModified: p.created_at ?? new Date().toISOString(),
-      }));
+  const programs = (data || []).filter((p: SitemapProgram) => p.slug);
+
+  const programUrls = programs.map((p) => ({
+    url: `${baseUrl}/programs/${p.slug}`,
+    lastModified: p.created_at ?? new Date().toISOString(),
+  }));
+
+  const categories = new Set<string>();
+  const countries = new Set<string>();
+
+  programs.forEach((p) => {
+    if (p.type) categories.add(p.type.toLowerCase());
+    if (p.country) countries.add(p.country.toLowerCase());
+  });
+
+  const categoryUrls = Array.from(categories).map((c) => ({
+    url: `${baseUrl}/category/${c}`,
+    lastModified: new Date().toISOString(),
+  }));
+
+  const countryUrls = Array.from(countries).map((c) => ({
+    url: `${baseUrl}/country/${encodeURIComponent(c)}`,
+    lastModified: new Date().toISOString(),
+  }));
 
   return [
     {
-      url: "https://app.tripdoc.net",
+      url: baseUrl,
       lastModified: new Date().toISOString(),
     },
-    ...programs,
+    ...categoryUrls,
+    ...countryUrls,
+    ...programUrls,
   ];
 }

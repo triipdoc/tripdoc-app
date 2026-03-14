@@ -32,11 +32,28 @@ const quickCardStyle = {
   minWidth: 180,
 } as const;
 
+const cardStyle = {
+  border: "1px solid #ddd",
+  padding: 16,
+  borderRadius: 10,
+  background: "#fafafa",
+  minWidth: 260,
+} as const;
+
+function isNotExpired(deadline?: string | null) {
+  if (!deadline) return true;
+
+  const today = new Date();
+  const d = new Date(deadline + "T23:59:59");
+
+  return d.getTime() >= today.getTime();
+}
+
 export default async function Home() {
   const { data, error } = await supabase
     .from("programs")
     .select(
-      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,created_at"
+      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,created_at,featured"
     )
     .order("created_at", { ascending: false });
 
@@ -48,23 +65,68 @@ export default async function Home() {
     );
   }
 
-  const programs = (data || []) as Program[];
-  const featuredPrograms = programs.filter((p) => p.featured).slice(0, 6);
+  const programs = ((data || []) as Program[]).filter((p) => {
+    const cleanTitle = p.title?.trim().toLowerCase();
 
-  const closingSoon = programs.filter((p) => {
-    if (!p.deadline) return false;
-
-    const deadline = new Date(p.deadline);
-    const today = new Date();
-
-    const diff =
-      (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-
-    return diff <= 7 && diff >= 0;
+    return (
+      !!p.id &&
+      !!p.slug &&
+      !!p.title &&
+      cleanTitle !== "featured" &&
+      cleanTitle !== "test" &&
+      cleanTitle !== "draft"
+    );
   });
 
-  const newlyAdded = programs.slice(0, 4);
-  const trending = programs.slice(0, 3);
+  const featuredPrograms = programs
+    .filter(
+      (p) =>
+        p.featured &&
+        p.verification_status === "verified" &&
+        isNotExpired(p.deadline)
+    )
+    .slice(0, 6);
+
+  const featuredIds = new Set(featuredPrograms.map((p) => p.id));
+
+  const closingSoon = programs
+    .filter((p) => {
+      if (!p.deadline) return false;
+      if (featuredIds.has(p.id)) return false;
+
+      const deadline = new Date(p.deadline + "T23:59:59");
+      const today = new Date();
+
+      const diff =
+        (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+
+      return diff <= 7 && diff >= 0;
+    })
+    .slice(0, 6);
+
+  const closingSoonIds = new Set(closingSoon.map((p) => p.id));
+
+  const newlyAdded = programs
+    .filter(
+      (p) =>
+        !featuredIds.has(p.id) &&
+        !closingSoonIds.has(p.id) &&
+        isNotExpired(p.deadline)
+    )
+    .slice(0, 4);
+
+  const newlyAddedIds = new Set(newlyAdded.map((p) => p.id));
+
+  const trending = programs
+    .filter(
+      (p) =>
+        !featuredIds.has(p.id) &&
+        !closingSoonIds.has(p.id) &&
+        !newlyAddedIds.has(p.id) &&
+        p.verification_status === "verified" &&
+        isNotExpired(p.deadline)
+    )
+    .slice(0, 3);
 
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: 32 }}>
@@ -162,147 +224,80 @@ export default async function Home() {
           </a>
         </HorizontalRow>
       </div>
-{/* Featured Opportunities */}
-{featuredPrograms.length > 0 && (
-  <div style={{ marginTop: 60 }}>
-    <h2 style={{ marginBottom: 10 }}>⭐ Featured Opportunities</h2>
-    <p style={{ color: "#666", marginBottom: 20 }}>
-      Hand-picked opportunities highlighted on TripDoc.
-    </p>
 
-    <HorizontalRow>
-      {featuredPrograms.map((p) => (
-        <div
-          key={p.id}
-          className="horizontal-card"
-          style={{
-            border: "1px solid #ddd",
-            padding: 16,
-            borderRadius: 10,
-            background: "#fafafa",
-          }}
-        >
-          {p.image_url && (
-            <img
-              src={p.image_url}
-              alt={p.title}
-              style={{
-                width: "100%",
-                height: 140,
-                objectFit: "cover",
-                borderRadius: 8,
-                marginBottom: 10,
-                display: "block",
-              }}
-            />
-          )}
+      {/* Featured Opportunities */}
+      {featuredPrograms.length > 0 && (
+        <div style={{ marginTop: 60 }}>
+          <h2 style={{ marginBottom: 10 }}>⭐ Featured Opportunities</h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Hand-picked opportunities highlighted on TripDoc.
+          </p>
 
-          <a
-            href={`/programs/${p.slug}`}
-            style={{
-              fontSize: 18,
-              fontWeight: 600,
-              textDecoration: "none",
-              color: "black",
-            }}
-          >
-            {p.title}
-          </a>
+          <HorizontalRow>
+            {featuredPrograms.map((p) => (
+              <a
+                key={p.id}
+                href={`/programs/${p.slug}`}
+                className="horizontal-card"
+                style={{
+                  ...cardStyle,
+                  display: "block",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {p.image_url && (
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      display: "block",
+                    }}
+                  />
+                )}
 
-          <div
-  style={{
-    display: "inline-block",
-    marginBottom: 10,
-    padding: "6px 10px",
-    background: "#fff4d6",
-    color: "#8a5a00",
-    borderRadius: 8,
-    fontWeight: 600,
-    fontSize: 13,
-  }}
->
-  ⭐ Featured
-</div>
+                {p.featured && (
+                  <div
+                    style={{
+                      display: "inline-block",
+                      marginBottom: 10,
+                      padding: "6px 10px",
+                      background: "#fff4d6",
+                      color: "#8a5a00",
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      fontSize: 13,
+                    }}
+                  >
+                    ⭐ Featured
+                  </div>
+                )}
 
-          <div style={{ marginTop: 6 }}>
-            {p.country || "—"} • {p.funding_type || "—"}
-          </div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: "black",
+                  }}
+                >
+                  {p.title}
+                </div>
+
+                <div style={{ marginTop: 6 }}>
+                  {p.country || "—"} • {p.funding_type || "—"}
+                </div>
+              </a>
+            ))}
+          </HorizontalRow>
         </div>
-      ))}
-    </HorizontalRow>
-  </div>
-)}
+      )}
 
-{featuredPrograms.length > 0 && (
-  <div style={{ marginTop: 60 }}>
-    <h2 style={{ marginBottom: 10 }}>⭐ Featured Opportunities</h2>
-    <p style={{ color: "#666", marginBottom: 20 }}>
-      Hand-picked opportunities highlighted on TripDoc.
-    </p>
-
-    <HorizontalRow>
-      {featuredPrograms.map((p) => (
-        <div
-          key={p.id}
-          className="horizontal-card"
-          style={{
-            border: "1px solid #ddd",
-            padding: 16,
-            borderRadius: 10,
-            background: "#fafafa",
-          }}
-        >
-          {p.image_url && (
-            <img
-              src={p.image_url}
-              alt={p.title}
-              style={{
-                width: "100%",
-                height: 140,
-                objectFit: "cover",
-                borderRadius: 8,
-                marginBottom: 10,
-                display: "block",
-              }}
-            />
-          )}
-
-          <a
-            href={`/programs/${p.slug}`}
-            style={{
-              fontSize: 18,
-              fontWeight: 600,
-              textDecoration: "none",
-              color: "black",
-            }}
-          >
-            {p.title}
-          </a>
-          {p.featured && (
-  <div
-    style={{
-      display: "inline-block",
-      marginBottom: 10,
-      padding: "6px 10px",
-      background: "#fff4d6",
-      color: "#8a5a00",
-      borderRadius: 8,
-      fontWeight: 600,
-      fontSize: 13,
-    }}
-  >
-    ⭐ Featured
-  </div>
-)}
-
-          <div style={{ marginTop: 6 }}>
-            {p.country || "—"} • {p.funding_type || "—"}
-          </div>
-        </div>
-      ))}
-    </HorizontalRow>
-  </div>
-)}
       {/* Closing Soon */}
       <div style={{ marginTop: 60 }}>
         <h2 style={{ marginBottom: 10 }}>🔥 Closing Soon</h2>
@@ -315,8 +310,9 @@ export default async function Home() {
         ) : (
           <HorizontalRow>
             {closingSoon.map((p) => (
-              <div
+              <a
                 key={p.id}
+                href={`/programs/${p.slug}`}
                 className="horizontal-card"
                 style={{
                   border: "1px solid #e5e5e5",
@@ -326,164 +322,173 @@ export default async function Home() {
                   boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                   transition: "all 0.2s ease",
                   cursor: "pointer",
+                  minWidth: 260,
+                  display: "block",
+                  textDecoration: "none",
+                  color: "inherit",
                 }}
               >
                 {p.image_url && (
-  <img
-    src={p.image_url}
-    alt={p.title}
-    style={{
-      width: "100%",
-      height: 140,
-      objectFit: "cover",
-      borderRadius: 8,
-      marginBottom: 10,
-      display: "block",
-    }}
-  />
-)}
-                <a
-                  href={`/programs/${p.slug}`}
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      display: "block",
+                    }}
+                  />
+                )}
+
+                {p.featured && (
+                  <div
+                    style={{
+                      display: "inline-block",
+                      marginBottom: 10,
+                      padding: "6px 10px",
+                      background: "#fff4d6",
+                      color: "#8a5a00",
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      fontSize: 13,
+                    }}
+                  >
+                    ⭐ Featured
+                  </div>
+                )}
+
+                <div
                   style={{
                     fontWeight: 600,
-                    textDecoration: "none",
                     color: "black",
                   }}
                 >
                   {p.title}
-                </a>
-
-                {p.featured && (
-  <div
-    style={{
-      display: "inline-block",
-      marginBottom: 10,
-      padding: "6px 10px",
-      background: "#fff4d6",
-      color: "#8a5a00",
-      borderRadius: 8,
-      fontWeight: 600,
-      fontSize: 13,
-    }}
-  >
-    ⭐ Featured
-  </div>
-)}
+                </div>
 
                 <div style={{ fontSize: 14, marginTop: 6 }}>
                   Deadline: {p.deadline}
                 </div>
-              </div>
+              </a>
             ))}
           </HorizontalRow>
         )}
       </div>
 
       {/* Newly Added */}
-      <div style={{ marginTop: 60 }}>
-        <h2 style={{ marginBottom: 10 }}>🆕 Newly Added Opportunities</h2>
-        <p style={{ color: "#666", marginBottom: 20 }}>
-          Recently added verified programs on TripDoc.
-        </p>
+      {newlyAdded.length > 0 && (
+        <div style={{ marginTop: 60 }}>
+          <h2 style={{ marginBottom: 10 }}>🆕 Newly Added Opportunities</h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Recently added verified programs on TripDoc.
+          </p>
 
-        <HorizontalRow>
-          {newlyAdded.map((p) => (
-            <div
-              key={p.id}
-              className="horizontal-card"
-              style={{
-                border: "1px solid #ddd",
-                padding: 16,
-                borderRadius: 10,
-                background: "#fafafa",
-              }}
-            >
-              {p.image_url && (
-  <img
-    src={p.image_url}
-    alt={p.title}
-    style={{
-      width: "100%",
-      height: 140,
-      objectFit: "cover",
-      borderRadius: 8,
-      marginBottom: 10,
-      display: "block",
-    }}
-  />
-)}
+          <HorizontalRow>
+            {newlyAdded.map((p) => (
               <a
+                key={p.id}
                 href={`/programs/${p.slug}`}
+                className="horizontal-card"
                 style={{
-                  fontWeight: 600,
+                  ...cardStyle,
+                  display: "block",
                   textDecoration: "none",
-                  color: "black",
+                  color: "inherit",
                 }}
               >
-                {p.title}
-              </a>
+                {p.image_url && (
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      display: "block",
+                    }}
+                  />
+                )}
 
-              <div style={{ fontSize: 14, marginTop: 6 }}>
-                {p.country || "—"} • {p.funding_type || "—"}
-              </div>
-            </div>
-          ))}
-        </HorizontalRow>
-      </div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    color: "black",
+                  }}
+                >
+                  {p.title}
+                </div>
+
+                <div style={{ fontSize: 14, marginTop: 6 }}>
+                  {p.country || "—"} • {p.funding_type || "—"}
+                </div>
+              </a>
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
 
       {/* Trending */}
-      <div style={{ marginTop: 60 }}>
-        <h2 style={{ marginBottom: 10 }}>🔥 Trending Opportunities</h2>
-        <p style={{ color: "#666", marginBottom: 20 }}>
-          Recently added and popular opportunities on TripDoc.
-        </p>
+      {trending.length > 0 && (
+        <div style={{ marginTop: 60 }}>
+          <h2 style={{ marginBottom: 10 }}>🔥 Trending Opportunities</h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Recently added and popular opportunities on TripDoc.
+          </p>
 
-        <HorizontalRow>
-      {trending.map((p) => (
-  <div
-    key={p.id}
-    className="horizontal-card"
-    style={{
-      border: "1px solid #ddd",
-      padding: 16,
-      borderRadius: 10,
-      background: "#fafafa",
-      minWidth: 260,
-    }}
-  >
-    {p.image_url && (
-      <img
-        src={p.image_url}
-        alt={p.title}
-        style={{
-          width: "100%",
-          height: 140,
-          objectFit: "cover",
-          borderRadius: 8,
-          marginBottom: 10,
-        }}
-      />
-    )}
+          <HorizontalRow>
+            {trending.map((p) => (
+              <a
+                key={p.id}
+                href={`/programs/${p.slug}`}
+                className="horizontal-card"
+                style={{
+                  ...cardStyle,
+                  display: "block",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {p.image_url && (
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      display: "block",
+                    }}
+                  />
+                )}
 
-    <a
-      href={`/programs/${p.slug}`}
-      style={{
-        fontSize: 18,
-        fontWeight: 600,
-        textDecoration: "none",
-        color: "black",
-      }}
-    >
-      {p.title}
-    </a>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: "black",
+                  }}
+                >
+                  {p.title}
+                </div>
 
-    <div style={{ marginTop: 6 }}>
-      {p.country || "—"} • {p.funding_type || "—"}
-    </div>
-  </div>
-))}
-        </HorizontalRow>
-      </div>
+                <div style={{ marginTop: 6 }}>
+                  {p.country || "—"} • {p.funding_type || "—"}
+                </div>
+              </a>
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
 
       {/* Search + Filters + Main Listing */}
       <div style={{ marginTop: 80 }}>
