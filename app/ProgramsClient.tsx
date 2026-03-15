@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Program = {
   id: string;
@@ -167,6 +167,15 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
   const [country, setCountry] = useState("all");
   const [funding, setFunding] = useState("all");
 
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const initialQuery = params.get("q");
+
+  if (initialQuery) {
+    setQ(initialQuery);
+  }
+}, []);
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
 
@@ -239,9 +248,10 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
         }}
       >
         <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search title, country, type, funding..."
+  id="main-search"
+  value={q}
+  onChange={(e) => setQ(e.target.value)}
+  placeholder="Search title, country, type, funding..."
           style={{
             ...inputStyle,
             minWidth: 260,

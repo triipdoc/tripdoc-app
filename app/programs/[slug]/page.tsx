@@ -137,7 +137,33 @@ export default async function ProgramDetailPage({
         </a>
 
         {/* TITLE */}
-        <h1 style={{ fontSize: 34, marginBottom: 10 }}>{program.title}</h1>
+        <h1
+  style={{
+    fontSize: 42,
+    fontWeight: 800,
+    lineHeight: 1.2,
+    marginBottom: 12,
+    letterSpacing: "-0.4px",
+  }}
+>
+  {program.title}
+</h1>
+<div
+  style={{
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+    marginBottom: 20,
+    color: "#555",
+    fontSize: 15,
+    fontWeight: 600,
+  }}
+>
+  {program.country && <span>🌍 {program.country}</span>}
+  {program.type && <span>📚 {program.type}</span>}
+  {program.funding_type && <span>💰 {program.funding_type}</span>}
+  {program.deadline && <span>📅 Deadline: {program.deadline}</span>}
+</div>
 
         {/* HERO IMAGE */}
         {program.image_url && (
@@ -167,14 +193,15 @@ export default async function ProgramDetailPage({
 
         {/* QUICK INFO */}
         <div
-          style={{
-            marginBottom: 28,
-            border: "1px solid #e5e5e5",
-            borderRadius: 14,
-            padding: 22,
-            background: "#fafafa",
-          }}
-        >
+  style={{
+    marginBottom: 32,
+    border: "1px solid #e5e7eb",
+    borderRadius: 18,
+    padding: 24,
+    background: "white",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+  }}
+>
           <h2
             style={{
               marginTop: 0,
@@ -194,10 +221,10 @@ export default async function ProgramDetailPage({
           >
             <div
               style={{
-                background: "white",
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 14,
+                background: "#fafafa",
+border: "1px solid #eef0f3",
+borderRadius: 12,
+padding: 16,
               }}
             >
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
@@ -328,9 +355,10 @@ export default async function ProgramDetailPage({
             rel="noreferrer"
             style={{
               padding: "14px 22px",
-              background: "#0070f3",
-              color: "white",
-              borderRadius: 8,
+background: "#0070f3",
+color: "white",
+borderRadius: 10,
+boxShadow: "0 8px 20px rgba(0,112,243,0.18)",
               textDecoration: "none",
               fontWeight: 600,
               pointerEvents: program.official_url ? "auto" : "none",
@@ -370,7 +398,7 @@ export default async function ProgramDetailPage({
               padding: "14px 18px",
               background: "#0A66C2",
               color: "white",
-              borderRadius: 8,
+              borderRadius: 10,
               textDecoration: "none",
               fontWeight: 600,
             }}
@@ -382,14 +410,15 @@ export default async function ProgramDetailPage({
         {/* DESCRIPTION */}
         {program.description && (
           <div
-            style={{
-              border: "1px solid #ddd",
-              borderRadius: 12,
-              padding: 24,
-              background: "#fff",
-              marginBottom: 32,
-            }}
-          >
+  style={{
+    border: "1px solid #e5e7eb",
+    borderRadius: 18,
+    padding: 26,
+    background: "#fff",
+    marginBottom: 32,
+    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+  }}
+>
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Program Description</h2>
 
             <p
@@ -410,10 +439,11 @@ export default async function ProgramDetailPage({
           <div
             style={{
               marginTop: 0,
-              border: "1px solid #ddd",
-              borderRadius: 12,
-              padding: 24,
-              background: "#fff",
+              border: "1px solid #e5e7eb",
+borderRadius: 18,
+padding: 24,
+background: "#fff",
+boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
             }}
           >
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Related Opportunities</h2>
