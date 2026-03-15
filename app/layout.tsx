@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import HeaderNav from "./components/HeaderNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,17 +21,6 @@ export const metadata: Metadata = {
   },
   description:
     "TripDoc helps students and professionals discover verified scholarships, internships, fellowships, research programs, and other global opportunities.",
-  keywords: [
-    "TripDoc",
-    "scholarships",
-    "internships",
-    "fellowships",
-    "research programs",
-    "global opportunities",
-    "study abroad",
-    "international opportunities",
-    "verified opportunities",
-  ],
   openGraph: {
     title: "TripDoc | Verified Global Opportunities",
     description:
@@ -67,12 +57,13 @@ export default function RootLayout({
           style={{
             borderBottom: "1px solid #eee",
             boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
-            padding: "16px 24px",
+            padding: "14px 24px",
             marginBottom: 30,
-            background: "#fff",
+            background: "rgba(255,255,255,0.96)",
             position: "sticky",
             top: 0,
             zIndex: 100,
+            backdropFilter: "blur(10px)",
           }}
         >
           <div
@@ -86,7 +77,7 @@ export default function RootLayout({
               flexWrap: "wrap",
             }}
           >
-           <a
+            <a
               href="/"
               style={{
                 display: "flex",
@@ -94,15 +85,16 @@ export default function RootLayout({
                 gap: 8,
                 textDecoration: "none",
                 color: "black",
-                fontWeight: 700,
-                fontSize: 20,
+                fontWeight: 800,
+                fontSize: 22,
+                whiteSpace: "nowrap",
               }}
             >
               <img
                 src="/logo.png"
                 alt="TripDoc Logo"
                 style={{
-                  height: 32,
+                  height: 34,
                   width: "auto",
                   display: "block",
                 }}
@@ -110,50 +102,7 @@ export default function RootLayout({
               <span>TripDoc</span>
             </a>
 
-            <nav
-              style={{
-                display: "flex",
-                gap: 20,
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              <a href="/" style={{ textDecoration: "none", color: "#444" }}>
-                Home
-              </a>
-
-              <a
-                href="/category/scholarship"
-                style={{ textDecoration: "none", color: "#444" }}
-              >
-                Scholarships
-              </a>
-
-              <a
-                href="/category/internship"
-                style={{ textDecoration: "none", color: "#444" }}
-              >
-                Internships
-              </a>
-
-              <a
-                href="/category/research"
-                style={{ textDecoration: "none", color: "#444" }}
-              >
-                Research
-              </a>
-
-              <a
-                href="/category/fellowship"
-                style={{ textDecoration: "none", color: "#444" }}
-              >
-                Fellowships
-              </a>
-
-              <a href="/admin" style={{ textDecoration: "none", color: "#444" }}>
-                Admin
-              </a>
-            </nav>
+            <HeaderNav />
           </div>
         </header>
 
