@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HeaderNav from "./components/HeaderNav";
+import Footer from "./components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -108,18 +109,7 @@ export default function RootLayout({
 
         {children}
 
-        <footer
-          style={{
-            borderTop: "1px solid #eee",
-            marginTop: 60,
-            padding: 24,
-            textAlign: "center",
-            color: "#666",
-            background: "#fff",
-          }}
-        >
-          © {new Date().getFullYear()} TripDoc — Verified global opportunities
-        </footer>
+        <Footer />
       </body>
     </html>
   );

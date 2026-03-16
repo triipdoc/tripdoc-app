@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import ProgramsClient from "./ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
 import HeroSearch from "./components/HeroSearch";
+import Footer from "./components/Footer";
 
 type Program = {
   id: string;

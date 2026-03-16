@@ -67,5 +67,5 @@ img {
 
 .horizontal-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.12);
 }
