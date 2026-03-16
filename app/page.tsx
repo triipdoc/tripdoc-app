@@ -292,6 +292,71 @@ export default async function Home() {
         </HorizontalRow>
       </div>
 
+      {/* Popular Opportunities */}
+
+<div style={{ marginTop: 72 }}>
+  <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+    🔥 Popular Opportunities
+  </h2>
+
+  <p style={{ color: "#666", marginBottom: 20 }}>
+    Verified programs many students are currently exploring.
+  </p>
+
+  <HorizontalRow>
+    {programs
+      .filter(
+        (p) =>
+          p.verification_status === "verified" &&
+          p.deadline &&
+          new Date(p.deadline) > new Date()
+      )
+      .slice(0, 6)
+      .map((p) => (
+        <a
+          key={p.id}
+          href={`/programs/${p.slug}`}
+          className="horizontal-card"
+          style={{
+            ...cardStyle,
+            display: "block",
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
+          {p.image_url && (
+            <img
+              src={p.image_url}
+              alt={p.title}
+              loading="lazy"
+              style={{
+                width: "100%",
+                height: 140,
+                objectFit: "cover",
+                borderRadius: 8,
+                marginBottom: 10,
+              }}
+            />
+          )}
+
+          <div
+            style={{
+              fontWeight: 600,
+              color: "black",
+              fontSize: 18,
+            }}
+          >
+            {p.title}
+          </div>
+
+          <div style={{ marginTop: 6 }}>
+            {p.country || "—"} • {p.funding_type || "—"}
+          </div>
+        </a>
+      ))}
+  </HorizontalRow>
+</div>
+
       {/* Featured Opportunities */}
       {featuredPrograms.length > 0 && (
         <div style={{ marginTop: 72 }}>
