@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 type Program = {
   id: string;
@@ -13,6 +13,13 @@ type Program = {
   official_url: string | null;
   image_url: string | null;
   verification_status: string | null;
+  created_at?: string | null;
+};
+
+type ProgramsClientProps = {
+  initialPrograms: Program[];
+  searchQuery?: string;
+  showBackLink?: boolean;
 };
 
 function Badge({ status }: { status?: string | null }) {
@@ -161,25 +168,20 @@ const inputStyle = {
   background: "white",
 } as const;
 
-export default function ProgramsClient({ programs }: { programs: Program[] }) {
-  const [q, setQ] = useState("");
+export default function ProgramsClient({
+  initialPrograms,
+  searchQuery = "",
+  showBackLink = false,
+}: ProgramsClientProps) {
+  const [q, setQ] = useState(searchQuery);
   const [type, setType] = useState("all");
   const [country, setCountry] = useState("all");
   const [funding, setFunding] = useState("all");
 
-  useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const initialQuery = params.get("q");
-
-  if (initialQuery) {
-    setQ(initialQuery);
-  }
-}, []);
-
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
 
-    const sorted = [...programs].sort((a, b) => {
+    const sorted = [...initialPrograms].sort((a, b) => {
       const aStatus = getDeadlineStatus(a.deadline).daysLeft ?? 999999;
       const bStatus = getDeadlineStatus(b.deadline).daysLeft ?? 999999;
       return aStatus - bStatus;
@@ -204,40 +206,65 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
 
       return matchesQuery && matchesType && matchesCountry && matchesFunding;
     });
-  }, [programs, q, type, country, funding]);
+  }, [initialPrograms, q, type, country, funding]);
 
   const types = useMemo(() => {
     const set = new Set<string>();
 
-    programs.forEach((p) => {
+    initialPrograms.forEach((p) => {
       if (p.type) set.add(p.type.toLowerCase());
     });
 
     return ["all", ...Array.from(set).sort()];
-  }, [programs]);
+  }, [initialPrograms]);
 
   const countries = useMemo(() => {
     const set = new Set<string>();
 
-    programs.forEach((p) => {
+    initialPrograms.forEach((p) => {
       if (p.country) set.add(p.country);
     });
 
     return ["all", ...Array.from(set).sort()];
-  }, [programs]);
+  }, [initialPrograms]);
 
   const fundings = useMemo(() => {
     const set = new Set<string>();
 
-    programs.forEach((p) => {
+    initialPrograms.forEach((p) => {
       if (p.funding_type) set.add(p.funding_type);
     });
 
     return ["all", ...Array.from(set).sort()];
-  }, [programs]);
+  }, [initialPrograms]);
 
   return (
-    <>
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>
+      <div style={{ marginBottom: 10 }}>
+        {showBackLink && (
+  <a
+    href="/"
+    style={{
+      display: "inline-block",
+      marginBottom: 16,
+      textDecoration: "none",
+      color: "#0070f3",
+      fontWeight: 600,
+    }}
+  >
+    ← Back to home
+  </a>
+)}
+
+        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>
+          {searchQuery ? `Search results for "${searchQuery}"` : "All Opportunities"}
+        </h1>
+
+        <p style={{ marginTop: 8, color: "#666" }}>
+          Discover verified scholarships, internships, jobs, and global opportunities.
+        </p>
+      </div>
+
       <div
         style={{
           display: "flex",
@@ -248,10 +275,10 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
         }}
       >
         <input
-  id="main-search"
-  value={q}
-  onChange={(e) => setQ(e.target.value)}
-  placeholder="Search title, country, type, funding..."
+          id="main-search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search title, country, type, funding..."
           style={{
             ...inputStyle,
             minWidth: 260,
@@ -293,7 +320,7 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
         <button
           type="button"
           onClick={() => {
-            setQ("");
+            setQ(searchQuery);
             setType("all");
             setCountry("all");
             setFunding("all");
@@ -311,7 +338,7 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
         </button>
 
         <div style={{ color: "#555", fontWeight: 600 }}>
-          Showing {filtered.length} of {programs.length}
+          Showing {filtered.length} of {initialPrograms.length}
         </div>
       </div>
 
@@ -324,7 +351,7 @@ export default function ProgramsClient({ programs }: { programs: Program[] }) {
             borderRadius: 12,
             background: "#fafafa",
             boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
           }}
         >
           <h3 style={{ marginTop: 0, marginBottom: 8 }}>No opportunities found</h3>
@@ -333,35 +360,35 @@ transition: "transform 0.2s ease, box-shadow 0.2s ease",
           </p>
         </div>
       ) : (
-       <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: 20,
-    marginTop: 24,
-  }}
->
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 20,
+            marginTop: 24,
+          }}
+        >
           {filtered.map((p) => {
             const applyLink = p.official_url || "#";
             const isApplyDisabled = !p.official_url;
 
             return (
-             <a
-  key={p.id}
-  href={`/programs/${p.slug}`}
-  style={{
-    display: "block",
-    border: "1px solid #ddd",
-    padding: 20,
-    borderRadius: 12,
-    background: "#fafafa",
-    minWidth: 150,
-    textDecoration: "none",
-    color: "inherit",
-    transition: "all 0.2s ease",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-  }}
->
+              <a
+                key={p.id}
+                href={`/programs/${p.slug}`}
+                style={{
+                  display: "block",
+                  border: "1px solid #ddd",
+                  padding: 20,
+                  borderRadius: 12,
+                  background: "#fafafa",
+                  minWidth: 150,
+                  textDecoration: "none",
+                  color: "inherit",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                }}
+              >
                 <ProgramImage src={p.image_url} alt={p.title} />
 
                 <div
@@ -379,10 +406,10 @@ transition: "transform 0.2s ease, box-shadow 0.2s ease",
                 <div
                   style={{
                     display: "flex",
-gap: 8,
-alignItems: "center",
-flexWrap: "wrap",
-marginBottom: 4,
+                    gap: 8,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    marginBottom: 4,
                   }}
                 >
                   <DeadlineBadge deadline={p.deadline} />
@@ -425,30 +452,30 @@ marginBottom: 4,
                     View Details
                   </span>
 
-                 <button
-  type="button"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
 
-    if (!isApplyDisabled) {
-      window.open(applyLink, "_blank", "noopener,noreferrer");
-    }
-  }}
-  disabled={isApplyDisabled}
-  style={{
-    display: "inline-block",
-    padding: "10px 16px",
-    background: isApplyDisabled ? "#999" : "#0070f3",
-    color: "white",
-    borderRadius: 8,
-    border: "none",
-    cursor: isApplyDisabled ? "not-allowed" : "pointer",
-    fontWeight: 600,
-  }}
->
-  Apply Now
-</button>
+                      if (!isApplyDisabled) {
+                        window.open(applyLink, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                    disabled={isApplyDisabled}
+                    style={{
+                      display: "inline-block",
+                      padding: "10px 16px",
+                      background: isApplyDisabled ? "#999" : "#0070f3",
+                      color: "white",
+                      borderRadius: 8,
+                      border: "none",
+                      cursor: isApplyDisabled ? "not-allowed" : "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Apply Now
+                  </button>
                 </div>
 
                 {isApplyDisabled && (
@@ -461,6 +488,6 @@ marginBottom: 4,
           })}
         </div>
       )}
-    </>
+    </main>
   );
 }

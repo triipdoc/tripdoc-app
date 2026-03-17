@@ -1,8 +1,7 @@
 import { supabase } from "../lib/supabase";
-import ProgramsClient from "./ProgramsClient";
+import ProgramsClient from "./programs/ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
 import HeroSearch from "./components/HeroSearch";
-import Footer from "./components/Footer";
 
 type Program = {
   id: string;
@@ -160,13 +159,22 @@ export default async function Home() {
             color: "#555",
             maxWidth: 680,
             marginBottom: 28,
+            lineHeight: 1.55,
           }}
         >
           Scholarships, internships, fellowships, and research programs worldwide —
           all verified and curated to help you study, travel, and build your career.
         </p>
 
-        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            flexWrap: "wrap",
+            marginTop: 8,
+            marginBottom: 24,
+          }}
+        >
           <a
             href="/category/scholarship"
             style={{
@@ -177,6 +185,8 @@ export default async function Home() {
               textDecoration: "none",
               fontWeight: 700,
               boxShadow: "0 6px 18px rgba(0,112,243,0.22)",
+              display: "inline-flex",
+              alignItems: "center",
             }}
           >
             🎓 Explore Scholarships
@@ -193,13 +203,17 @@ export default async function Home() {
               color: "#333",
               background: "white",
               boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              display: "inline-flex",
+              alignItems: "center",
             }}
           >
             💼 Explore Internships
           </a>
         </div>
 
-        <HeroSearch />
+        <div style={{ marginTop: 12, marginBottom: 6 }}>
+          <HeroSearch />
+        </div>
 
         <div
           style={{
@@ -248,7 +262,6 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Browse by Category */}
       <div style={{ marginTop: 72 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           Browse by Category
@@ -292,72 +305,69 @@ export default async function Home() {
         </HorizontalRow>
       </div>
 
-      {/* Popular Opportunities */}
+      <div style={{ marginTop: 72 }}>
+        <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+          🔥 Popular Opportunities
+        </h2>
 
-<div style={{ marginTop: 72 }}>
-  <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-    🔥 Popular Opportunities
-  </h2>
+        <p style={{ color: "#666", marginBottom: 20 }}>
+          Verified programs many students are currently exploring.
+        </p>
 
-  <p style={{ color: "#666", marginBottom: 20 }}>
-    Verified programs many students are currently exploring.
-  </p>
+        <HorizontalRow>
+          {programs
+            .filter(
+              (p) =>
+                p.verification_status === "verified" &&
+                p.deadline &&
+                new Date(p.deadline) > new Date()
+            )
+            .slice(0, 6)
+            .map((p) => (
+              <a
+                key={p.id}
+                href={`/programs/${p.slug}`}
+                className="horizontal-card"
+                style={{
+                  ...cardStyle,
+                  display: "block",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {p.image_url && (
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                    }}
+                  />
+                )}
 
-  <HorizontalRow>
-    {programs
-      .filter(
-        (p) =>
-          p.verification_status === "verified" &&
-          p.deadline &&
-          new Date(p.deadline) > new Date()
-      )
-      .slice(0, 6)
-      .map((p) => (
-        <a
-          key={p.id}
-          href={`/programs/${p.slug}`}
-          className="horizontal-card"
-          style={{
-            ...cardStyle,
-            display: "block",
-            textDecoration: "none",
-            color: "inherit",
-          }}
-        >
-          {p.image_url && (
-            <img
-              src={p.image_url}
-              alt={p.title}
-              loading="lazy"
-              style={{
-                width: "100%",
-                height: 140,
-                objectFit: "cover",
-                borderRadius: 8,
-                marginBottom: 10,
-              }}
-            />
-          )}
+                <div
+                  style={{
+                    fontWeight: 600,
+                    color: "black",
+                    fontSize: 18,
+                  }}
+                >
+                  {p.title}
+                </div>
 
-          <div
-            style={{
-              fontWeight: 600,
-              color: "black",
-              fontSize: 18,
-            }}
-          >
-            {p.title}
-          </div>
+                <div style={{ marginTop: 6 }}>
+                  {p.country || "—"} • {p.funding_type || "—"}
+                </div>
+              </a>
+            ))}
+        </HorizontalRow>
+      </div>
 
-          <div style={{ marginTop: 6 }}>
-            {p.country || "—"} • {p.funding_type || "—"}
-          </div>
-        </a>
-      ))}
-  </HorizontalRow>
-</div>
-
-      {/* Featured Opportunities */}
       {featuredPrograms.length > 0 && (
         <div style={{ marginTop: 72 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
@@ -432,7 +442,6 @@ export default async function Home() {
         </div>
       )}
 
-      {/* Browse by Country */}
       <div style={{ marginTop: 72 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           Browse by Country
@@ -476,7 +485,6 @@ export default async function Home() {
         </HorizontalRow>
       </div>
 
-      {/* Closing Soon */}
       <div style={{ marginTop: 72 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           🔥 Closing Soon
@@ -559,7 +567,6 @@ export default async function Home() {
         )}
       </div>
 
-      {/* Newly Added */}
       {newlyAdded.length > 0 && (
         <div style={{ marginTop: 72 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
@@ -616,7 +623,6 @@ export default async function Home() {
         </div>
       )}
 
-      {/* Trending */}
       {trending.length > 0 && (
         <div style={{ marginTop: 72 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
@@ -674,7 +680,6 @@ export default async function Home() {
         </div>
       )}
 
-      {/* Search + Filters + Main Listing */}
       <div id="all-opportunities" style={{ marginTop: 88 }}>
         <div style={{ marginBottom: 20 }}>
           <h2 style={{ marginBottom: 10, fontSize: 30, fontWeight: 800 }}>
@@ -687,7 +692,7 @@ export default async function Home() {
           </p>
         </div>
 
-        <ProgramsClient programs={programs} />
+        <ProgramsClient initialPrograms={programs} />
       </div>
     </main>
   );
