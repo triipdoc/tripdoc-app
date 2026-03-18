@@ -262,6 +262,82 @@ export default async function Home() {
         </div>
       </div>
 
+      <div
+  style={{
+    marginTop: 40,
+    marginBottom: 24,
+    border: "1px solid #e5e7eb",
+    borderRadius: 18,
+    padding: "24px 22px",
+    background: "#ffffff",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+  }}
+>
+  <h2
+    style={{
+      margin: "0 0 10px 0",
+      fontSize: 26,
+      fontWeight: 800,
+    }}
+  >
+    Why trust TripDoc?
+  </h2>
+
+  <p
+    style={{
+      margin: "0 0 18px 0",
+      color: "#666",
+      maxWidth: 760,
+      lineHeight: 1.6,
+    }}
+  >
+    We focus on verified global opportunities and present them in a simple,
+    searchable format so students and professionals can find real options faster.
+  </p>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+      gap: 14,
+    }}
+  >
+    {[
+      {
+        title: "✅ Verified sources",
+        text: "We prioritize opportunities with traceable official links and clear details.",
+      },
+      {
+        title: "🌍 Global opportunities",
+        text: "Scholarships, internships, research and fellowships across multiple countries.",
+      },
+      {
+        title: "⚡ Updated regularly",
+        text: "New programs are added frequently so visitors can keep discovering fresh options.",
+      },
+      {
+        title: "🔎 Easy to search",
+        text: "Use smart search, filters and category pages to find the right match quickly.",
+      },
+    ].map((item) => (
+      <div
+        key={item.title}
+        style={{
+          border: "1px solid #eef0f3",
+          borderRadius: 14,
+          padding: 16,
+          background: "#fafafa",
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>{item.title}</div>
+        <div style={{ color: "#555", fontSize: 14, lineHeight: 1.6 }}>
+          {item.text}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
       <div style={{ marginTop: 72 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           Browse by Category

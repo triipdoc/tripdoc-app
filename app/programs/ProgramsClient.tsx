@@ -435,9 +435,63 @@ export default function ProgramsClient({
           }}
         >
           <h3 style={{ marginTop: 0, marginBottom: 8 }}>No opportunities found</h3>
-          <p style={{ margin: 0, color: "#666", lineHeight: 1.6 }}>
+
+          <p style={{ margin: "0 0 12px 0", color: "#666", lineHeight: 1.6 }}>
             Try a different keyword, choose another country, or remove some filters.
           </p>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <a
+              href="/programs?page=1"
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                textDecoration: "none",
+                border: "1px solid #ddd",
+                background: "#fff",
+                color: "#111",
+                fontWeight: 600,
+              }}
+            >
+              View all opportunities
+            </a>
+
+            <a
+              href="/programs?q=Germany&page=1"
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                textDecoration: "none",
+                border: "1px solid #ddd",
+                background: "#fff",
+                color: "#111",
+                fontWeight: 600,
+              }}
+            >
+              Try Germany
+            </a>
+
+            <a
+              href="/programs?q=scholarship&page=1"
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                textDecoration: "none",
+                border: "1px solid #ddd",
+                background: "#fff",
+                color: "#111",
+                fontWeight: 600,
+              }}
+            >
+              Try scholarships
+            </a>
+          </div>
         </div>
       ) : (
         <>
