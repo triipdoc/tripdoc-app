@@ -8,7 +8,6 @@ const navItems = [
   { href: "/category/internship", label: "Internships" },
   { href: "/category/research", label: "Research" },
   { href: "/category/fellowship", label: "Fellowships" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export default function HeaderNav() {
