@@ -69,3 +69,13 @@ img {
   transform: translateY(-6px);
   box-shadow: 0 14px 28px rgba(0,0,0,0.12);
 }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.skeleton {
+  animation: pulse 1.2s ease-in-out infinite;
+}

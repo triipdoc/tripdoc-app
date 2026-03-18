@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Program = {
   id: string;
@@ -20,6 +21,12 @@ type ProgramsClientProps = {
   initialPrograms: Program[];
   searchQuery?: string;
   showBackLink?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalPrograms?: number;
+  selectedType?: string;
+  selectedCountry?: string;
+  selectedFunding?: string;
 };
 
 function Badge({ status }: { status?: string | null }) {
@@ -172,11 +179,19 @@ export default function ProgramsClient({
   initialPrograms,
   searchQuery = "",
   showBackLink = false,
+  currentPage = 1,
+  totalPages = 1,
+  totalPrograms = 0,
+  selectedType = "all",
+  selectedCountry = "all",
+  selectedFunding = "all",
 }: ProgramsClientProps) {
+  const router = useRouter();
+
   const [q, setQ] = useState(searchQuery);
-  const [type, setType] = useState("all");
-  const [country, setCountry] = useState("all");
-  const [funding, setFunding] = useState("all");
+  const [type, setType] = useState(selectedType);
+  const [country, setCountry] = useState(selectedCountry);
+  const [funding, setFunding] = useState(selectedFunding);
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -238,23 +253,68 @@ export default function ProgramsClient({
     return ["all", ...Array.from(set).sort()];
   }, [initialPrograms]);
 
+  function updateUrl(nextValues: {
+    q?: string;
+    type?: string;
+    country?: string;
+    funding?: string;
+    page?: string;
+  }) {
+    const params = new URLSearchParams(window.location.search);
+
+    const nextQ = nextValues.q ?? q;
+    const nextType = nextValues.type ?? type;
+    const nextCountry = nextValues.country ?? country;
+    const nextFunding = nextValues.funding ?? funding;
+    const nextPage = nextValues.page ?? "1";
+
+    if (!nextQ.trim()) params.delete("q");
+    else params.set("q", nextQ.trim());
+
+    if (nextType === "all") params.delete("type");
+    else params.set("type", nextType);
+
+    if (nextCountry === "all") params.delete("country");
+    else params.set("country", nextCountry);
+
+    if (nextFunding === "all") params.delete("funding");
+    else params.set("funding", nextFunding);
+
+    params.set("page", nextPage);
+
+    router.push(`/programs?${params.toString()}`);
+  }
+
+  function buildPageLink(page: number) {
+    const params = new URLSearchParams();
+
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
+    if (selectedType !== "all") params.set("type", selectedType);
+    if (selectedCountry !== "all") params.set("country", selectedCountry);
+    if (selectedFunding !== "all") params.set("funding", selectedFunding);
+
+    params.set("page", String(page));
+
+    return `/programs?${params.toString()}`;
+  }
+
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>
       <div style={{ marginBottom: 10 }}>
         {showBackLink && (
-  <a
-    href="/"
-    style={{
-      display: "inline-block",
-      marginBottom: 16,
-      textDecoration: "none",
-      color: "#0070f3",
-      fontWeight: 600,
-    }}
-  >
-    ← Back to home
-  </a>
-)}
+          <a
+            href="/"
+            style={{
+              display: "inline-block",
+              marginBottom: 16,
+              textDecoration: "none",
+              color: "#0070f3",
+              fontWeight: 600,
+            }}
+          >
+            ← Back to home
+          </a>
+        )}
 
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>
           {searchQuery ? `Search results for "${searchQuery}"` : "All Opportunities"}
@@ -277,7 +337,11 @@ export default function ProgramsClient({
         <input
           id="main-search"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setQ(value);
+            updateUrl({ q: value, page: "1" });
+          }}
           placeholder="Search title, country, type, funding..."
           style={{
             ...inputStyle,
@@ -285,7 +349,15 @@ export default function ProgramsClient({
           }}
         />
 
-        <select value={type} onChange={(e) => setType(e.target.value)} style={inputStyle}>
+        <select
+          value={type}
+          onChange={(e) => {
+            const value = e.target.value;
+            setType(value);
+            updateUrl({ type: value, page: "1" });
+          }}
+          style={inputStyle}
+        >
           {types.map((t) => (
             <option key={t} value={t}>
               {t === "all" ? "All types" : t}
@@ -295,7 +367,11 @@ export default function ProgramsClient({
 
         <select
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setCountry(value);
+            updateUrl({ country: value, page: "1" });
+          }}
           style={inputStyle}
         >
           {countries.map((c) => (
@@ -307,7 +383,11 @@ export default function ProgramsClient({
 
         <select
           value={funding}
-          onChange={(e) => setFunding(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setFunding(value);
+            updateUrl({ funding: value, page: "1" });
+          }}
           style={inputStyle}
         >
           {fundings.map((f) => (
@@ -320,10 +400,11 @@ export default function ProgramsClient({
         <button
           type="button"
           onClick={() => {
-            setQ(searchQuery);
+            setQ("");
             setType("all");
             setCountry("all");
             setFunding("all");
+            router.push("/programs?page=1");
           }}
           style={{
             padding: "10px 14px",
@@ -338,7 +419,7 @@ export default function ProgramsClient({
         </button>
 
         <div style={{ color: "#555", fontWeight: 600 }}>
-          Showing {filtered.length} of {initialPrograms.length}
+          Showing {filtered.length} on this page • {totalPrograms} total opportunities
         </div>
       </div>
 
@@ -351,142 +432,194 @@ export default function ProgramsClient({
             borderRadius: 12,
             background: "#fafafa",
             boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
           }}
         >
           <h3 style={{ marginTop: 0, marginBottom: 8 }}>No opportunities found</h3>
-          <p style={{ margin: 0, color: "#666" }}>
-            Try changing your search or filters to see more results.
+          <p style={{ margin: 0, color: "#666", lineHeight: 1.6 }}>
+            Try a different keyword, choose another country, or remove some filters.
           </p>
         </div>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 20,
-            marginTop: 24,
-          }}
-        >
-          {filtered.map((p) => {
-            const applyLink = p.official_url || "#";
-            const isApplyDisabled = !p.official_url;
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 20,
+              marginTop: 24,
+            }}
+          >
+            {filtered.map((p) => {
+              const applyLink = p.official_url || "#";
+              const isApplyDisabled = !p.official_url;
 
-            return (
-              <a
-                key={p.id}
-                href={`/programs/${p.slug}`}
-                style={{
-                  display: "block",
-                  border: "1px solid #ddd",
-                  padding: 20,
-                  borderRadius: 12,
-                  background: "#fafafa",
-                  minWidth: 150,
-                  textDecoration: "none",
-                  color: "inherit",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                }}
-              >
-                <ProgramImage src={p.image_url} alt={p.title} />
-
-                <div
+              return (
+                <a
+                  key={p.id}
+                  href={`/programs/${p.slug}`}
                   style={{
-                    fontSize: 20,
+                    display: "block",
+                    border: "1px solid #ddd",
+                    padding: 20,
+                    borderRadius: 12,
+                    background: "#fafafa",
+                    minWidth: 150,
+                    textDecoration: "none",
+                    color: "inherit",
+                    transition: "all 0.2s ease",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                  }}
+                >
+                  <ProgramImage src={p.image_url} alt={p.title} />
+
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 600,
+                      color: "black",
+                      marginBottom: 10,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {p.title}
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <DeadlineBadge deadline={p.deadline} />
+                    <Badge status={p.verification_status} />
+                  </div>
+
+                  <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+                    <div>
+                      <strong>Country:</strong> {p.country || "—"}
+                    </div>
+                    <div>
+                      <strong>Type:</strong> {p.type || "—"}
+                    </div>
+                    <div>
+                      <strong>Funding:</strong> {p.funding_type || "—"}
+                    </div>
+                    <div>
+                      <strong>Deadline:</strong> {p.deadline || "—"}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 14,
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "10px 16px",
+                        background: "#111",
+                        color: "white",
+                        borderRadius: 8,
+                        fontWeight: 600,
+                      }}
+                    >
+                      View Details
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        if (!isApplyDisabled) {
+                          window.open(applyLink, "_blank", "noopener,noreferrer");
+                        }
+                      }}
+                      disabled={isApplyDisabled}
+                      style={{
+                        display: "inline-block",
+                        padding: "10px 16px",
+                        background: isApplyDisabled ? "#999" : "#0070f3",
+                        color: "white",
+                        borderRadius: 8,
+                        border: "none",
+                        cursor: isApplyDisabled ? "not-allowed" : "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Apply Now
+                    </button>
+                  </div>
+
+                  {isApplyDisabled && (
+                    <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+                      Application link not available yet.
+                    </div>
+                  )}
+                </a>
+              );
+            })}
+          </div>
+
+          <div
+            style={{
+              marginTop: 32,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
+            <div style={{ color: "#666", fontSize: 14 }}>
+              Showing page {currentPage} of {totalPages} • {totalPrograms} total opportunities
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {currentPage > 1 && (
+                <a
+                  href={buildPageLink(currentPage - 1)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: 10,
+                    textDecoration: "none",
+                    border: "1px solid #ddd",
+                    color: "#111",
+                    background: "#fff",
                     fontWeight: 600,
-                    color: "black",
-                    marginBottom: 10,
-                    lineHeight: 1.4,
                   }}
                 >
-                  {p.title}
-                </div>
+                  ← Previous
+                </a>
+              )}
 
-                <div
+              {currentPage < totalPages && (
+                <a
+                  href={buildPageLink(currentPage + 1)}
                   style={{
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    marginBottom: 4,
+                    padding: "10px 16px",
+                    borderRadius: 10,
+                    textDecoration: "none",
+                    border: "1px solid #2563eb",
+                    color: "#fff",
+                    background: "#2563eb",
+                    fontWeight: 600,
                   }}
                 >
-                  <DeadlineBadge deadline={p.deadline} />
-                  <Badge status={p.verification_status} />
-                </div>
-
-                <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                  <div>
-                    <strong>Country:</strong> {p.country || "—"}
-                  </div>
-                  <div>
-                    <strong>Type:</strong> {p.type || "—"}
-                  </div>
-                  <div>
-                    <strong>Funding:</strong> {p.funding_type || "—"}
-                  </div>
-                  <div>
-                    <strong>Deadline:</strong> {p.deadline || "—"}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 14,
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-block",
-                      padding: "10px 16px",
-                      background: "#111",
-                      color: "white",
-                      borderRadius: 8,
-                      fontWeight: 600,
-                    }}
-                  >
-                    View Details
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-
-                      if (!isApplyDisabled) {
-                        window.open(applyLink, "_blank", "noopener,noreferrer");
-                      }
-                    }}
-                    disabled={isApplyDisabled}
-                    style={{
-                      display: "inline-block",
-                      padding: "10px 16px",
-                      background: isApplyDisabled ? "#999" : "#0070f3",
-                      color: "white",
-                      borderRadius: 8,
-                      border: "none",
-                      cursor: isApplyDisabled ? "not-allowed" : "pointer",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Apply Now
-                  </button>
-                </div>
-
-                {isApplyDisabled && (
-                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
-                    Application link not available yet.
-                  </div>
-                )}
-              </a>
-            );
-          })}
-        </div>
+                  Next →
+                </a>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </main>
   );

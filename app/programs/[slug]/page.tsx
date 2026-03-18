@@ -72,6 +72,13 @@ type RelatedProgram = {
   funding_type: string | null;
 };
 
+const infoCardStyle = {
+  background: "#fafafa",
+  border: "1px solid #eef0f3",
+  borderRadius: 12,
+  padding: 16,
+} as const;
+
 export default async function ProgramDetailPage({
   params,
 }: {
@@ -122,7 +129,6 @@ export default async function ProgramDetailPage({
   return (
     <main style={{ fontFamily: "Arial", background: "#fff" }}>
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 40px" }}>
-        {/* BACK BUTTON */}
         <a
           href="/"
           style={{
@@ -136,46 +142,45 @@ export default async function ProgramDetailPage({
           ← Back to home
         </a>
 
-        {/* TITLE */}
         <h1
-  style={{
-    fontSize: 42,
-    fontWeight: 800,
-    lineHeight: 1.2,
-    marginBottom: 12,
-    letterSpacing: "-0.4px",
-  }}
->
-  {program.title}
-</h1>
-<div
-  style={{
-    display: "flex",
-    gap: 10,
-    flexWrap: "wrap",
-    marginBottom: 20,
-    color: "#555",
-    fontSize: 15,
-    fontWeight: 600,
-  }}
->
-  {program.country && <span>🌍 {program.country}</span>}
-  {program.type && <span>📚 {program.type}</span>}
-  {program.funding_type && <span>💰 {program.funding_type}</span>}
-  {program.deadline && <span>📅 Deadline: {program.deadline}</span>}
-</div>
+          style={{
+            fontSize: 42,
+            fontWeight: 800,
+            lineHeight: 1.2,
+            marginBottom: 12,
+            letterSpacing: "-0.4px",
+          }}
+        >
+          {program.title}
+        </h1>
 
-        {/* HERO IMAGE */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 20,
+            color: "#555",
+            fontSize: 15,
+            fontWeight: 600,
+          }}
+        >
+          {program.country && <span>🌍 {program.country}</span>}
+          {program.type && <span>📚 {program.type}</span>}
+          {program.funding_type && <span>💰 {program.funding_type}</span>}
+          {program.deadline && <span>📅 Deadline: {program.deadline}</span>}
+        </div>
+
         {program.image_url && (
           <div
             style={{
               width: "100%",
-              maxWidth: 820,
-              margin: "20px auto 30px",
-              borderRadius: 16,
+              margin: "20px 0 30px",
+              borderRadius: 18,
               overflow: "hidden",
               background: "#f7f7f7",
-              border: "1px solid #eee",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
             }}
           >
             <img
@@ -183,7 +188,7 @@ export default async function ProgramDetailPage({
               alt={program.title}
               style={{
                 width: "100%",
-                maxHeight: 320,
+                height: 320,
                 objectFit: "cover",
                 display: "block",
               }}
@@ -191,17 +196,16 @@ export default async function ProgramDetailPage({
           </div>
         )}
 
-        {/* QUICK INFO */}
         <div
-  style={{
-    marginBottom: 32,
-    border: "1px solid #e5e7eb",
-    borderRadius: 18,
-    padding: 24,
-    background: "white",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-  }}
->
+          style={{
+            marginBottom: 32,
+            border: "1px solid #e5e7eb",
+            borderRadius: 18,
+            padding: 24,
+            background: "white",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+          }}
+        >
           <h2
             style={{
               marginTop: 0,
@@ -219,70 +223,35 @@ export default async function ProgramDetailPage({
               gap: 14,
             }}
           >
-            <div
-              style={{
-                background: "#fafafa",
-border: "1px solid #eef0f3",
-borderRadius: 12,
-padding: 16,
-              }}
-            >
+            <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Country
               </div>
               <div style={{ fontWeight: 600 }}>🌍 {program.country || "—"}</div>
             </div>
 
-            <div
-              style={{
-                background: "white",
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
+            <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Type
               </div>
               <div style={{ fontWeight: 600 }}>📚 {program.type || "—"}</div>
             </div>
 
-            <div
-              style={{
-                background: "white",
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
+            <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Funding
               </div>
               <div style={{ fontWeight: 600 }}>💰 {program.funding_type || "—"}</div>
             </div>
 
-            <div
-              style={{
-                background: "white",
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
+            <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Deadline
               </div>
               <div style={{ fontWeight: 600 }}>📅 {program.deadline || "—"}</div>
             </div>
 
-            <div
-              style={{
-                background: "white",
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
+            <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Verification
               </div>
@@ -293,14 +262,7 @@ padding: 16,
               </div>
             </div>
 
-            <div
-              style={{
-                background: "white",
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
+            <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Official Link
               </div>
@@ -311,7 +273,6 @@ padding: 16,
           </div>
         </div>
 
-        {/* VERIFIED BADGE */}
         <div style={{ marginBottom: 20 }}>
           {program.verification_status === "verified" ? (
             <span
@@ -340,7 +301,6 @@ padding: 16,
           )}
         </div>
 
-        {/* APPLY + SHARE */}
         <div
           style={{
             marginBottom: 30,
@@ -355,10 +315,10 @@ padding: 16,
             rel="noreferrer"
             style={{
               padding: "14px 22px",
-background: "#0070f3",
-color: "white",
-borderRadius: 10,
-boxShadow: "0 8px 20px rgba(0,112,243,0.18)",
+              background: "#0070f3",
+              color: "white",
+              borderRadius: 10,
+              boxShadow: "0 8px 20px rgba(0,112,243,0.18)",
               textDecoration: "none",
               fontWeight: 600,
               pointerEvents: program.official_url ? "auto" : "none",
@@ -407,18 +367,17 @@ boxShadow: "0 8px 20px rgba(0,112,243,0.18)",
           </a>
         </div>
 
-        {/* DESCRIPTION */}
         {program.description && (
           <div
-  style={{
-    border: "1px solid #e5e7eb",
-    borderRadius: 18,
-    padding: 26,
-    background: "#fff",
-    marginBottom: 32,
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-  }}
->
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 18,
+              padding: 26,
+              background: "#fff",
+              marginBottom: 32,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+            }}
+          >
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Program Description</h2>
 
             <p
@@ -434,16 +393,15 @@ boxShadow: "0 8px 20px rgba(0,112,243,0.18)",
           </div>
         )}
 
-        {/* RELATED OPPORTUNITIES */}
         {relatedPrograms.length > 0 && (
           <div
             style={{
               marginTop: 0,
               border: "1px solid #e5e7eb",
-borderRadius: 18,
-padding: 24,
-background: "#fff",
-boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+              borderRadius: 18,
+              padding: 24,
+              background: "#fff",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
             }}
           >
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Related Opportunities</h2>
