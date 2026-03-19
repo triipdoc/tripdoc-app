@@ -45,7 +45,7 @@ export function proxy(request: NextRequest) {
 
     return NextResponse.next();
   } catch {
-    return unauthorized();
+    return new NextResponse("Proxy authentication error.", { status: 500 });
   }
 }
 
