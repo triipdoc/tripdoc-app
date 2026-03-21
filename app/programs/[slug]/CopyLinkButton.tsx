@@ -1,13 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
 export default function CopyLinkButton() {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const url = window.location.href;
+
+      await navigator.clipboard.writeText(url);
+
+      try {
+        await supabase.from("clicks").insert([
+          {
+            title: document.title,
+            type: "copy_link",
+          },
+        ]);
+      } catch (err) {
+        console.error("Copy link tracking failed", err);
+      }
+
       setCopied(true);
 
       setTimeout(() => {

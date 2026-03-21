@@ -2,6 +2,7 @@ import CopyLinkButton from "./CopyLinkButton";
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
 import StickyApplyBar from "./StickyApplyBar";
+import ApplyNowButton from "./ApplyNowButton";
 
 export async function generateMetadata({
   params,
@@ -309,24 +310,10 @@ export default async function ProgramDetailPage({
             flexWrap: "wrap",
           }}
         >
-          <a
-            href={program.official_url || "#"}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              padding: "14px 22px",
-              background: "#0070f3",
-              color: "white",
-              borderRadius: 10,
-              boxShadow: "0 8px 20px rgba(0,112,243,0.18)",
-              textDecoration: "none",
-              fontWeight: 600,
-              pointerEvents: program.official_url ? "auto" : "none",
-              opacity: program.official_url ? 1 : 0.6,
-            }}
-          >
-            Apply Now
-          </a>
+          <ApplyNowButton
+  title={program.title}
+  officialUrl={program.official_url}
+/>
 
           <CopyLinkButton />
 
