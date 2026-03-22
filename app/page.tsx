@@ -18,6 +18,13 @@ type Program = {
   featured?: boolean | null;
 };
 
+type ClickRow = {
+  program_id: string | null;
+  title: string | null;
+  type: string | null;
+  created_at?: string | null;
+};
+
 const quickCardStyle = {
   border: "1px solid #e5e7eb",
   borderRadius: 14,
@@ -82,6 +89,32 @@ export default async function Home() {
       cleanTitle !== "draft"
     );
   });
+
+  const { data: clickData } = await supabase
+    .from("clicks")
+    .select("program_id,title,type,created_at")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const clicks = (clickData || []) as ClickRow[];
+
+  const clickCountMap = new Map<string, number>();
+
+  clicks.forEach((click) => {
+    if (!click.program_id) return;
+
+    const current = clickCountMap.get(click.program_id) || 0;
+    clickCountMap.set(click.program_id, current + 1);
+  });
+
+  const trendingFromClicks = [...programs]
+    .filter((p) => clickCountMap.has(p.id))
+    .sort((a, b) => {
+      const aCount = clickCountMap.get(a.id) || 0;
+      const bCount = clickCountMap.get(b.id) || 0;
+      return bCount - aCount;
+    })
+    .slice(0, 6);
 
   const featuredPrograms = programs
     .filter(
@@ -516,6 +549,78 @@ export default async function Home() {
           </HorizontalRow>
         )}
       </div>
+
+      {trendingFromClicks.length > 0 && (
+        <div style={{ marginTop: 72 }}>
+          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+            📈 Trending by Users
+          </h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Opportunities getting the most interest from recent visitors on TripDoc.
+          </p>
+
+          <HorizontalRow>
+            {trendingFromClicks.map((p) => (
+              <a
+                key={p.id}
+                href={`/programs/${p.slug}`}
+                className="horizontal-card"
+                style={{
+                  ...cardStyle,
+                  display: "block",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {p.image_url && (
+                  <img
+                    src={p.image_url}
+                    alt={p.title}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: 140,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      display: "block",
+                    }}
+                  />
+                )}
+
+                <div
+                  style={{
+                    display: "inline-block",
+                    marginBottom: 10,
+                    padding: "6px 10px",
+                    background: "#eef4ff",
+                    color: "#1d4ed8",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    fontSize: 13,
+                  }}
+                >
+                  🔥 {clickCountMap.get(p.id) || 0} clicks
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: "black",
+                  }}
+                >
+                  {p.title}
+                </div>
+
+                <div style={{ marginTop: 6 }}>
+                  {p.country || "—"} • {p.funding_type || "—"}
+                </div>
+              </a>
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
 
       <div style={{ marginTop: 72 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>

@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
-export default function CopyLinkButton() {
+type CopyLinkButtonProps = {
+  programId: string;
+  title: string;
+};
+
+export default function CopyLinkButton({
+  programId,
+  title,
+}: CopyLinkButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -15,7 +23,8 @@ export default function CopyLinkButton() {
       try {
         await supabase.from("clicks").insert([
           {
-            title: document.title,
+            program_id: programId,
+            title,
             type: "copy_link",
           },
         ]);

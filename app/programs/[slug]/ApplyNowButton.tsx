@@ -3,11 +3,13 @@
 import { supabase } from "../../../lib/supabase";
 
 type ApplyNowButtonProps = {
+  programId: string;
   title: string;
   officialUrl: string | null;
 };
 
 export default function ApplyNowButton({
+  programId,
   title,
   officialUrl,
 }: ApplyNowButtonProps) {
@@ -24,6 +26,7 @@ export default function ApplyNowButton({
         try {
           await supabase.from("clicks").insert([
             {
+              program_id: programId,
               title,
               type: "apply",
             },

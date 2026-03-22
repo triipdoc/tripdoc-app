@@ -311,11 +311,15 @@ export default async function ProgramDetailPage({
           }}
         >
           <ApplyNowButton
+  programId={program.id}
   title={program.title}
   officialUrl={program.official_url}
 />
 
-          <CopyLinkButton />
+          <CopyLinkButton
+  programId={program.id}
+  title={program.title}
+/>
 
           <a
             href={`https://wa.me/?text=${encodeURIComponent(
