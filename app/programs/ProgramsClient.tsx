@@ -27,6 +27,7 @@ type ProgramsClientProps = {
   selectedType?: string;
   selectedCountry?: string;
   selectedFunding?: string;
+  selectedSort?: string;
 };
 
 function Badge({ status }: { status?: string | null }) {
@@ -185,6 +186,7 @@ export default function ProgramsClient({
   selectedType = "all",
   selectedCountry = "all",
   selectedFunding = "all",
+  selectedSort = "latest",
 }: ProgramsClientProps) {
   const router = useRouter();
 
@@ -192,15 +194,51 @@ export default function ProgramsClient({
   const [type, setType] = useState(selectedType);
   const [country, setCountry] = useState(selectedCountry);
   const [funding, setFunding] = useState(selectedFunding);
+  const [sort, setSort] = useState(selectedSort);
+  const [copiedProgramId, setCopiedProgramId] = useState<string | null>(null);
+
+  async function trackClick(programId: string, action: string) {
+  try {
+    const res = await fetch("/api/track-click", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      keepalive: true,
+      body: JSON.stringify({
+        program_id: programId,
+        action,
+      }),
+    });
+
+    const result = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      console.error("Tracking API error:", result || res.statusText);
+      return false;
+    }
+
+    console.log("Tracking success:", result);
+    return true;
+  } catch (err) {
+    console.error("Tracking failed:", err);
+    return false;
+  }
+}
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
 
-    const sorted = [...initialPrograms].sort((a, b) => {
-      const aStatus = getDeadlineStatus(a.deadline).daysLeft ?? 999999;
-      const bStatus = getDeadlineStatus(b.deadline).daysLeft ?? 999999;
-      return aStatus - bStatus;
-    });
+    const shouldSortByDeadline = sort === "latest";
+    const sorted = [...initialPrograms];
+
+    if (shouldSortByDeadline) {
+      sorted.sort((a, b) => {
+        const aStatus = getDeadlineStatus(a.deadline).daysLeft ?? 999999;
+        const bStatus = getDeadlineStatus(b.deadline).daysLeft ?? 999999;
+        return aStatus - bStatus;
+      });
+    }
 
     return sorted.filter((p) => {
       const matchesQuery =
@@ -221,7 +259,7 @@ export default function ProgramsClient({
 
       return matchesQuery && matchesType && matchesCountry && matchesFunding;
     });
-  }, [initialPrograms, q, type, country, funding]);
+  }, [initialPrograms, q, type, country, funding, sort]);
 
   const types = useMemo(() => {
     const set = new Set<string>();
@@ -258,6 +296,7 @@ export default function ProgramsClient({
     type?: string;
     country?: string;
     funding?: string;
+    sort?: string;
     page?: string;
   }) {
     const params = new URLSearchParams(window.location.search);
@@ -266,6 +305,7 @@ export default function ProgramsClient({
     const nextType = nextValues.type ?? type;
     const nextCountry = nextValues.country ?? country;
     const nextFunding = nextValues.funding ?? funding;
+    const nextSort = nextValues.sort ?? sort;
     const nextPage = nextValues.page ?? "1";
 
     if (!nextQ.trim()) params.delete("q");
@@ -280,6 +320,9 @@ export default function ProgramsClient({
     if (nextFunding === "all") params.delete("funding");
     else params.set("funding", nextFunding);
 
+    if (nextSort === "latest") params.delete("sort");
+    else params.set("sort", nextSort);
+
     params.set("page", nextPage);
 
     router.push(`/programs?${params.toString()}`);
@@ -292,6 +335,7 @@ export default function ProgramsClient({
     if (selectedType !== "all") params.set("type", selectedType);
     if (selectedCountry !== "all") params.set("country", selectedCountry);
     if (selectedFunding !== "all") params.set("funding", selectedFunding);
+    if (selectedSort !== "latest") params.set("sort", selectedSort);
 
     params.set("page", String(page));
 
@@ -397,6 +441,22 @@ export default function ProgramsClient({
           ))}
         </select>
 
+        <select
+          value={sort}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSort(value);
+            updateUrl({ sort: value, page: "1" });
+          }}
+          style={inputStyle}
+        >
+          <option value="latest">Latest</option>
+          <option value="trending_7d">Trending This Week</option>
+          <option value="trending_30d">Trending This Month</option>
+          <option value="most_applied">Most Applied</option>
+          <option value="most_shared">Most Shared</option>
+        </select>
+
         <button
           type="button"
           onClick={() => {
@@ -404,6 +464,7 @@ export default function ProgramsClient({
             setType("all");
             setCountry("all");
             setFunding("all");
+            setSort("latest");
             router.push("/programs?page=1");
           }}
           style={{
@@ -588,15 +649,16 @@ export default function ProgramsClient({
                     </span>
 
                     <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
+  type="button"
+  onClick={async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-                        if (!isApplyDisabled) {
-                          window.open(applyLink, "_blank", "noopener,noreferrer");
-                        }
-                      }}
+    if (!isApplyDisabled && p.id) {
+      await trackClick(p.id, "apply_now");
+      window.open(applyLink, "_blank", "noopener,noreferrer");
+    }
+  }}
                       disabled={isApplyDisabled}
                       style={{
                         display: "inline-block",
@@ -610,6 +672,43 @@ export default function ProgramsClient({
                       }}
                     >
                       Apply Now
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        if (!p.id || !p.slug) return;
+
+                        try {
+                          const detailUrl = `${window.location.origin}/programs/${p.slug}`;
+                          await navigator.clipboard.writeText(detailUrl);
+                          setCopiedProgramId(p.id);
+                          await trackClick(p.id, "copy_link");
+
+                          setTimeout(() => {
+                            setCopiedProgramId((current) =>
+                              current === p.id ? null : current
+                            );
+                          }, 2000);
+                        } catch (err) {
+                          console.error("Copy failed:", err);
+                        }
+                      }}
+                      style={{
+                        display: "inline-block",
+                        padding: "10px 16px",
+                        background: "#fff",
+                        color: "#111",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {copiedProgramId === p.id ? "Copied!" : "Copy Link"}
                     </button>
                   </div>
 

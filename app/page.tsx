@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import ProgramsClient from "./programs/ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
 import HeroSearch from "./components/HeroSearch";
+import TrackedProgramLink from "./components/TrackedProgramLink";
 
 type Program = {
   id: string;
@@ -20,8 +21,9 @@ type Program = {
 
 type ClickRow = {
   program_id: string | null;
-  title: string | null;
-  type: string | null;
+  title?: string | null;
+  type?: string | null;
+  action?: string | null;
   created_at?: string | null;
 };
 
@@ -61,6 +63,146 @@ function isNotExpired(deadline?: string | null) {
   return d.getTime() >= today.getTime();
 }
 
+function rankProgramsByClicks(clicks: ClickRow[] = [], actionFilter?: string) {
+  const counts = new Map<string, number>();
+
+  for (const row of clicks) {
+    if (!row.program_id) continue;
+    if (actionFilter && row.action !== actionFilter) continue;
+
+    counts.set(row.program_id, (counts.get(row.program_id) || 0) + 1);
+  }
+
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function rankProgramsByWeightedClicks(clicks: ClickRow[] = []) {
+  const scores = new Map<string, number>();
+
+  for (const row of clicks) {
+    if (!row.program_id) continue;
+
+    let weight = 1;
+    if (row.action === "apply_now") weight = 3;
+    if (row.action === "copy_link") weight = 2;
+    if (row.action === "open_detail") weight = 1;
+
+    scores.set(row.program_id, (scores.get(row.program_id) || 0) + weight);
+  }
+
+  return [...scores.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function pickProgramsByRank(
+  programs: Program[],
+  rankedEntries: [string, number][],
+  limit = 6,
+  excludeIds = new Set<string>()
+) {
+  const byId = new Map(programs.map((p) => [p.id, p]));
+  const results: Program[] = [];
+
+  for (const [programId] of rankedEntries) {
+    const program = byId.get(programId);
+    if (!program) continue;
+    if (excludeIds.has(program.id)) continue;
+    if (!program.slug) continue;
+    if (program.verification_status !== "verified") continue;
+    if (!isNotExpired(program.deadline)) continue;
+
+    results.push(program);
+
+    if (results.length >= limit) break;
+  }
+
+  return results;
+}
+
+function getMetricMap(entries: [string, number][]) {
+  return new Map(entries);
+}
+
+function ProgramCard({
+  program,
+  badge,
+  badgeStyle,
+  meta,
+}: {
+  program: Program;
+  badge?: string;
+  badgeStyle?: Record<string, string | number>;
+  meta?: string;
+}) {
+  if (!program.slug) return null;
+
+  return (
+    <TrackedProgramLink
+      href={`/programs/${program.slug}`}
+      programId={program.id}
+      className="horizontal-card"
+      style={{
+        ...cardStyle,
+        display: "block",
+        textDecoration: "none",
+        color: "inherit",
+      }}
+    >
+      {program.image_url && (
+        <img
+          src={program.image_url}
+          alt={program.title}
+          loading="lazy"
+          style={{
+            width: "100%",
+            height: 140,
+            objectFit: "cover",
+            borderRadius: 8,
+            marginBottom: 10,
+            display: "block",
+          }}
+        />
+      )}
+
+      {badge && (
+        <div
+          style={{
+            display: "inline-block",
+            marginBottom: 10,
+            padding: "6px 10px",
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: 13,
+            ...badgeStyle,
+          }}
+        >
+          {badge}
+        </div>
+      )}
+
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 600,
+          color: "black",
+        }}
+      >
+        {program.title}
+      </div>
+
+      <div style={{ marginTop: 6, fontSize: 14 }}>
+        {meta || `${program.country || "—"} • ${program.funding_type || "—"}`}
+      </div>
+    </TrackedProgramLink>
+  );
+}
+
+const now = new Date();
+const sevenDaysAgo = new Date(now);
+sevenDaysAgo.setDate(now.getDate() - 7);
+
+const thirtyDaysAgo = new Date(now);
+thirtyDaysAgo.setDate(now.getDate() - 30);
+
 export default async function Home() {
   const { data, error } = await supabase
     .from("programs")
@@ -92,29 +234,41 @@ export default async function Home() {
 
   const { data: clickData } = await supabase
     .from("clicks")
-    .select("program_id,title,type,created_at")
+    .select("program_id,title,type,action,created_at")
     .order("created_at", { ascending: false })
     .limit(500);
 
+  const { data: clickData7d } = await supabase
+    .from("clicks")
+    .select("program_id,title,type,action,created_at")
+    .gte("created_at", sevenDaysAgo.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const { data: clickData30d } = await supabase
+    .from("clicks")
+    .select("program_id,title,type,action,created_at")
+    .gte("created_at", thirtyDaysAgo.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
   const clicks = (clickData || []) as ClickRow[];
+  const clicks7d = (clickData7d || []) as ClickRow[];
+  const clicks30d = (clickData30d || []) as ClickRow[];
 
-  const clickCountMap = new Map<string, number>();
+  const overallClickRanking = rankProgramsByClicks(clicks);
+  const weightedTrending7dRanking = rankProgramsByWeightedClicks(clicks7d);
+  const weightedTrending30dRanking = rankProgramsByWeightedClicks(clicks30d);
+  const mostAppliedRanking = rankProgramsByClicks(clicks7d, "apply_now");
+  const mostSharedRanking = rankProgramsByClicks(clicks7d, "copy_link");
 
-  clicks.forEach((click) => {
-    if (!click.program_id) return;
+  const clickCountMap = getMetricMap(overallClickRanking);
+  const trending7dMap = getMetricMap(weightedTrending7dRanking);
+  const trending30dMap = getMetricMap(weightedTrending30dRanking);
+  const mostAppliedMap = getMetricMap(mostAppliedRanking);
+  const mostSharedMap = getMetricMap(mostSharedRanking);
 
-    const current = clickCountMap.get(click.program_id) || 0;
-    clickCountMap.set(click.program_id, current + 1);
-  });
-
-  const trendingFromClicks = [...programs]
-    .filter((p) => clickCountMap.has(p.id))
-    .sort((a, b) => {
-      const aCount = clickCountMap.get(a.id) || 0;
-      const bCount = clickCountMap.get(b.id) || 0;
-      return bCount - aCount;
-    })
-    .slice(0, 6);
+  const trendingFromClicks = pickProgramsByRank(programs, overallClickRanking, 6);
 
   const featuredPrograms = programs
     .filter(
@@ -165,6 +319,40 @@ export default async function Home() {
         isNotExpired(p.deadline)
     )
     .slice(0, 3);
+
+  const excludedForAnalytics = new Set<string>([
+    ...featuredIds,
+    ...closingSoonIds,
+    ...newlyAddedIds,
+  ]);
+
+  const trendingThisWeek = pickProgramsByRank(
+    programs,
+    weightedTrending7dRanking,
+    6,
+    excludedForAnalytics
+  );
+
+  const trendingThisMonth = pickProgramsByRank(
+    programs,
+    weightedTrending30dRanking,
+    6,
+    excludedForAnalytics
+  );
+
+  const mostApplied = pickProgramsByRank(
+    programs,
+    mostAppliedRanking,
+    6,
+    excludedForAnalytics
+  );
+
+  const mostShared = pickProgramsByRank(
+    programs,
+    mostSharedRanking,
+    6,
+    excludedForAnalytics
+  );
 
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 32px 48px" }}>
@@ -409,62 +597,15 @@ export default async function Home() {
 
           <HorizontalRow>
             {featuredPrograms.map((p) => (
-              <a
+              <ProgramCard
                 key={p.id}
-                href={`/programs/${p.slug}`}
-                className="horizontal-card"
-                style={{
-                  ...cardStyle,
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
+                program={p}
+                badge="⭐ Featured"
+                badgeStyle={{
+                  background: "#fff4d6",
+                  color: "#8a5a00",
                 }}
-              >
-                {p.image_url && (
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 140,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      display: "block",
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    display: "inline-block",
-                    marginBottom: 10,
-                    padding: "6px 10px",
-                    background: "#fff4d6",
-                    color: "#8a5a00",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    fontSize: 13,
-                  }}
-                >
-                  ⭐ Featured
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: "black",
-                  }}
-                >
-                  {p.title}
-                </div>
-
-                <div style={{ marginTop: 6 }}>
-                  {p.country || "—"} • {p.funding_type || "—"}
-                </div>
-              </a>
+              />
             ))}
           </HorizontalRow>
         </div>
@@ -483,68 +624,16 @@ export default async function Home() {
         ) : (
           <HorizontalRow>
             {closingSoon.map((p) => (
-              <a
+              <ProgramCard
                 key={p.id}
-                href={`/programs/${p.slug}`}
-                className="horizontal-card"
-                style={{
-                  border: "1px solid #e5e5e5",
-                  padding: 16,
-                  borderRadius: 12,
-                  background: "white",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                  minWidth: 260,
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
+                program={p}
+                badge="⏰ Closing Soon"
+                badgeStyle={{
+                  background: "#fff1db",
+                  color: "#a05a00",
                 }}
-              >
-                {p.image_url && (
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 140,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      display: "block",
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    display: "inline-block",
-                    marginBottom: 10,
-                    padding: "6px 10px",
-                    background: "#fff1db",
-                    color: "#a05a00",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    fontSize: 13,
-                  }}
-                >
-                  ⏰ Closing Soon
-                </div>
-
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: "black",
-                  }}
-                >
-                  {p.title}
-                </div>
-
-                <div style={{ fontSize: 14, marginTop: 6 }}>
-                  Deadline: {p.deadline}
-                </div>
-              </a>
+                meta={`Deadline: ${p.deadline || "—"}`}
+              />
             ))}
           </HorizontalRow>
         )}
@@ -561,62 +650,115 @@ export default async function Home() {
 
           <HorizontalRow>
             {trendingFromClicks.map((p) => (
-              <a
+              <ProgramCard
                 key={p.id}
-                href={`/programs/${p.slug}`}
-                className="horizontal-card"
-                style={{
-                  ...cardStyle,
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
+                program={p}
+                badge={`🔥 ${clickCountMap.get(p.id) || 0} clicks`}
+                badgeStyle={{
+                  background: "#eef4ff",
+                  color: "#1d4ed8",
                 }}
-              >
-                {p.image_url && (
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 140,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      display: "block",
-                    }}
-                  />
-                )}
+              />
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
 
-                <div
-                  style={{
-                    display: "inline-block",
-                    marginBottom: 10,
-                    padding: "6px 10px",
-                    background: "#eef4ff",
-                    color: "#1d4ed8",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    fontSize: 13,
-                  }}
-                >
-                  🔥 {clickCountMap.get(p.id) || 0} clicks
-                </div>
+      {trendingThisWeek.length > 0 && (
+        <div style={{ marginTop: 72 }}>
+          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+            📊 Trending This Week
+          </h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Opportunities with the strongest user activity in the last 7 days.
+          </p>
 
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: "black",
-                  }}
-                >
-                  {p.title}
-                </div>
+          <HorizontalRow>
+            {trendingThisWeek.map((p) => (
+              <ProgramCard
+                key={p.id}
+                program={p}
+                badge={`⚡ Score ${trending7dMap.get(p.id) || 0}`}
+                badgeStyle={{
+                  background: "#ecfeff",
+                  color: "#0f766e",
+                }}
+              />
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
 
-                <div style={{ marginTop: 6 }}>
-                  {p.country || "—"} • {p.funding_type || "—"}
-                </div>
-              </a>
+      {trendingThisMonth.length > 0 && (
+        <div style={{ marginTop: 72 }}>
+          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+            🗓️ Trending This Month
+          </h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Opportunities that kept attracting attention in the last 30 days.
+          </p>
+
+          <HorizontalRow>
+            {trendingThisMonth.map((p) => (
+              <ProgramCard
+                key={p.id}
+                program={p}
+                badge={`📈 Score ${trending30dMap.get(p.id) || 0}`}
+                badgeStyle={{
+                  background: "#f3f0ff",
+                  color: "#6d28d9",
+                }}
+              />
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
+
+      {mostApplied.length > 0 && (
+        <div style={{ marginTop: 72 }}>
+          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+            📝 Most Applied
+          </h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Opportunities users clicked Apply Now on the most in the last 7 days.
+          </p>
+
+          <HorizontalRow>
+            {mostApplied.map((p) => (
+              <ProgramCard
+                key={p.id}
+                program={p}
+                badge={`🚀 ${mostAppliedMap.get(p.id) || 0} apply clicks`}
+                badgeStyle={{
+                  background: "#effdf5",
+                  color: "#15803d",
+                }}
+              />
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
+
+      {mostShared.length > 0 && (
+        <div style={{ marginTop: 72 }}>
+          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+            🔗 Most Shared
+          </h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Opportunities users copied and shared the most in the last 7 days.
+          </p>
+
+          <HorizontalRow>
+            {mostShared.map((p) => (
+              <ProgramCard
+                key={p.id}
+                program={p}
+                badge={`📎 ${mostSharedMap.get(p.id) || 0} shares`}
+                badgeStyle={{
+                  background: "#fff7ed",
+                  color: "#c2410c",
+                }}
+              />
             ))}
           </HorizontalRow>
         </div>
@@ -637,50 +779,11 @@ export default async function Home() {
               (p) =>
                 p.verification_status === "verified" &&
                 p.deadline &&
-                new Date(p.deadline) > new Date()
+                new Date(p.deadline + "T23:59:59") > new Date()
             )
             .slice(0, 6)
             .map((p) => (
-              <a
-                key={p.id}
-                href={`/programs/${p.slug}`}
-                className="horizontal-card"
-                style={{
-                  ...cardStyle,
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                {p.image_url && (
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 140,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: "black",
-                    fontSize: 18,
-                  }}
-                >
-                  {p.title}
-                </div>
-
-                <div style={{ marginTop: 6 }}>
-                  {p.country || "—"} • {p.funding_type || "—"}
-                </div>
-              </a>
+              <ProgramCard key={p.id} program={p} />
             ))}
         </HorizontalRow>
       </div>
@@ -723,46 +826,7 @@ export default async function Home() {
 
           <HorizontalRow>
             {newlyAdded.map((p) => (
-              <a
-                key={p.id}
-                href={`/programs/${p.slug}`}
-                className="horizontal-card"
-                style={{
-                  ...cardStyle,
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                {p.image_url && (
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 140,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      display: "block",
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: "black",
-                  }}
-                >
-                  {p.title}
-                </div>
-
-                <div style={{ fontSize: 14, marginTop: 6 }}>
-                  {p.country || "—"} • {p.funding_type || "—"}
-                </div>
-              </a>
+              <ProgramCard key={p.id} program={p} />
             ))}
           </HorizontalRow>
         </div>
@@ -779,47 +843,7 @@ export default async function Home() {
 
           <HorizontalRow>
             {trending.map((p) => (
-              <a
-                key={p.id}
-                href={`/programs/${p.slug}`}
-                className="horizontal-card"
-                style={{
-                  ...cardStyle,
-                  display: "block",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                {p.image_url && (
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    loading="lazy"
-                    style={{
-                      width: "100%",
-                      height: 140,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      display: "block",
-                    }}
-                  />
-                )}
-
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: "black",
-                  }}
-                >
-                  {p.title}
-                </div>
-
-                <div style={{ marginTop: 6 }}>
-                  {p.country || "—"} • {p.funding_type || "—"}
-                </div>
-              </a>
+              <ProgramCard key={p.id} program={p} />
             ))}
           </HorizontalRow>
         </div>

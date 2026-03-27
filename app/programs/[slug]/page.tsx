@@ -3,6 +3,7 @@ import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
 import StickyApplyBar from "./StickyApplyBar";
 import ApplyNowButton from "./ApplyNowButton";
+import TrackedProgramLink from "../../components/TrackedProgramLink";
 
 export async function generateMetadata({
   params,
@@ -311,15 +312,15 @@ export default async function ProgramDetailPage({
           }}
         >
           <ApplyNowButton
-  programId={program.id}
-  title={program.title}
-  officialUrl={program.official_url}
-/>
+            programId={program.id}
+            title={program.title}
+            officialUrl={program.official_url}
+          />
 
           <CopyLinkButton
-  programId={program.id}
-  title={program.title}
-/>
+            programId={program.id}
+            title={program.title}
+          />
 
           <a
             href={`https://wa.me/?text=${encodeURIComponent(
@@ -398,26 +399,29 @@ export default async function ProgramDetailPage({
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Related Opportunities</h2>
 
             <div style={{ display: "grid", gap: 16 }}>
-              {relatedPrograms.map((item) => (
-                <a
-                  key={item.id}
-                  href={`/programs/${item.slug}`}
-                  style={{
-                    display: "block",
-                    border: "1px solid #eee",
-                    borderRadius: 10,
-                    padding: 16,
-                    textDecoration: "none",
-                    color: "black",
-                    background: "#fafafa",
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>{item.title}</div>
-                  <div style={{ color: "#555", fontSize: 14 }}>
-                    {item.country || "—"} • {item.funding_type || "—"}
-                  </div>
-                </a>
-              ))}
+              {relatedPrograms.map((item) =>
+                item.slug ? (
+                  <TrackedProgramLink
+                    key={item.id}
+                    href={`/programs/${item.slug}`}
+                    programId={item.id}
+                    style={{
+                      display: "block",
+                      border: "1px solid #eee",
+                      borderRadius: 10,
+                      padding: 16,
+                      textDecoration: "none",
+                      color: "black",
+                      background: "#fafafa",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>{item.title}</div>
+                    <div style={{ color: "#555", fontSize: 14 }}>
+                      {item.country || "—"} • {item.funding_type || "—"}
+                    </div>
+                  </TrackedProgramLink>
+                ) : null
+              )}
             </div>
           </div>
         )}

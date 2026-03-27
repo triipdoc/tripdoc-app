@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../../lib/supabase";
 
 type CopyLinkButtonProps = {
   programId: string;
@@ -14,23 +13,41 @@ export default function CopyLinkButton({
 }: CopyLinkButtonProps) {
   const [copied, setCopied] = useState(false);
 
+  async function trackCopyClick() {
+    try {
+      const res = await fetch("/api/track-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        keepalive: true,
+        body: JSON.stringify({
+          program_id: programId,
+          action: "copy_link",
+        }),
+      });
+
+      const result = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        console.error("Copy tracking API error:", result || res.statusText);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Copy tracking failed:", err);
+      return false;
+    }
+  }
+
   const handleCopy = async () => {
     try {
+      if (!programId) return;
+
       const url = window.location.href;
-
       await navigator.clipboard.writeText(url);
-
-      try {
-        await supabase.from("clicks").insert([
-          {
-            program_id: programId,
-            title,
-            type: "copy_link",
-          },
-        ]);
-      } catch (err) {
-        console.error("Copy link tracking failed", err);
-      }
+      await trackCopyClick();
 
       setCopied(true);
 

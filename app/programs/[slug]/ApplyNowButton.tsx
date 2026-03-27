@@ -1,7 +1,5 @@
 "use client";
 
-import { supabase } from "../../../lib/supabase";
-
 type ApplyNowButtonProps = {
   programId: string;
   title: string;
@@ -15,25 +13,46 @@ export default function ApplyNowButton({
 }: ApplyNowButtonProps) {
   const isDisabled = !officialUrl;
 
+  async function trackApplyClick() {
+    try {
+      const res = await fetch("/api/track-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        keepalive: true,
+        body: JSON.stringify({
+          program_id: programId,
+          action: "apply_now",
+        }),
+      });
+
+      const result = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        console.error("Apply tracking API error:", result || res.statusText);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Apply tracking failed:", err);
+      return false;
+    }
+  }
+
   return (
     <a
       href={officialUrl || "#"}
       target="_blank"
       rel="noreferrer"
-      onClick={async () => {
-        if (isDisabled) return;
-
-        try {
-          await supabase.from("clicks").insert([
-            {
-              program_id: programId,
-              title,
-              type: "apply",
-            },
-          ]);
-        } catch (err) {
-          console.error("Click tracking failed", err);
+      onClick={async (e) => {
+        if (isDisabled || !programId) {
+          e.preventDefault();
+          return;
         }
+
+        await trackApplyClick();
       }}
       style={{
         padding: "14px 22px",
