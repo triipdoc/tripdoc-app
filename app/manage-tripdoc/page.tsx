@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 type VerificationStatus = "verified" | "pending";
+
+
 
 type Program = {
   id: string;
@@ -84,6 +87,7 @@ type ProgramsResponse = {
 
 const PAGE_SIZE = 10;
 
+
 function generateSlug(text: string) {
   return text
     .toLowerCase()
@@ -145,6 +149,47 @@ const inputStyle = {
   width: "100%",
 } as const;
 
+function insertAtCursor(
+  currentValue: string,
+  insertText: string,
+  textarea: HTMLTextAreaElement | null
+) {
+  if (!textarea) return currentValue + insertText;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  return (
+    currentValue.slice(0, start) +
+    insertText +
+    currentValue.slice(end)
+  );
+}
+
+async function uploadProgramImage(file: File) {
+  const ext = file.name.split(".").pop() || "jpg";
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "-");
+  const fileName = `${Date.now()}-${safeName}`;
+  const filePath = `programs/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("program-images")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = supabase.storage
+    .from("program-images")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
 export default function AdminPage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -183,6 +228,14 @@ export default function AdminPage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [originalTitle, setOriginalTitle] = useState("");
   const [originalSlug, setOriginalSlug] = useState("");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+const [uploadingImage, setUploadingImage] = useState(false);
+
+const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+
+  
 
   const loadPrograms = async ({
     page = currentPage,
@@ -275,23 +328,25 @@ export default function AdminPage() {
   }, [currentPage, search, sortBy]);
 
   const resetForm = () => {
-    setTitle("");
-    setSlug("");
-    setCountry("");
-    setType("");
-    setFunding("");
-    setDeadline("");
-    setDescription("");
-    setOfficialUrl("");
-    setImageUrl("");
-    setFeatured(false);
-    setVerificationStatus("verified");
-    setEditingId(null);
-    setFormErrors({});
-    setSlugTouched(false);
-    setOriginalTitle("");
-    setOriginalSlug("");
-  };
+  setTitle("");
+  setSlug("");
+  setCountry("");
+  setType("");
+  setFunding("");
+  setDeadline("");
+  setDescription("");
+  setOfficialUrl("");
+  setImageUrl("");
+  setImageFile(null);
+  setImagePreviewUrl("");
+  setFeatured(false);
+  setVerificationStatus("verified");
+  setEditingId(null);
+  setFormErrors({});
+  setSlugTouched(false);
+  setOriginalTitle("");
+  setOriginalSlug("");
+};
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -348,27 +403,34 @@ export default function AdminPage() {
     if (Object.keys(nextErrors).length > 0) return;
 
     try {
-      setLoading(true);
+  setLoading(true);
 
-      const res = await fetch("/api/admin/programs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          slug: finalSlug,
-          country: country.trim(),
-          type: type.trim(),
-          funding_type: funding.trim(),
-          deadline: deadline || "",
-          official_url: officialUrl.trim(),
-          image_url: imageUrl.trim(),
-          description: description.trim(),
-          verification_status: verificationStatus,
-          featured,
-        }),
-      });
+  let finalImageUrl = imageUrl.trim();
+
+  if (imageFile) {
+    setUploadingImage(true);
+    finalImageUrl = await uploadProgramImage(imageFile);
+  }
+
+  const res = await fetch("/api/admin/programs", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    title: title.trim(),
+    slug: finalSlug,
+    country: country.trim(),
+    type: type.trim(),
+    funding_type: funding.trim(),
+    deadline: deadline || "",
+    official_url: officialUrl.trim(),
+    image_url: finalImageUrl,
+    description: description.trim(),
+    verification_status: verificationStatus,
+    featured,
+  }),
+});
 
       const result = await res.json();
 
@@ -402,6 +464,7 @@ export default function AdminPage() {
       });
     } finally {
       setLoading(false);
+setUploadingImage(false);
     }
   };
 
@@ -438,9 +501,16 @@ export default function AdminPage() {
     if (Object.keys(nextErrors).length > 0) return;
 
     try {
-      setLoading(true);
+  setLoading(true);
 
-      const res = await fetch(`/api/admin/programs/${editingId}`, {
+  let finalImageUrl = imageUrl.trim();
+
+  if (imageFile) {
+    setUploadingImage(true);
+    finalImageUrl = await uploadProgramImage(imageFile);
+  }
+
+  const res = await fetch(`/api/admin/programs/${editingId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -453,7 +523,7 @@ export default function AdminPage() {
           funding_type: funding.trim(),
           deadline: deadline || "",
           official_url: officialUrl.trim(),
-          image_url: imageUrl.trim(),
+          image_url: finalImageUrl,
           description: description.trim(),
           verification_status: verificationStatus,
           featured,
@@ -495,6 +565,7 @@ export default function AdminPage() {
       });
     } finally {
       setLoading(false);
+setUploadingImage(false);
     }
   };
 
@@ -649,6 +720,8 @@ export default function AdminPage() {
     setDeadline(program.deadline || "");
     setOfficialUrl(program.official_url || "");
     setImageUrl(program.image_url || "");
+    setImageFile(null);
+setImagePreviewUrl(program.image_url || "");
     setDescription(program.description || "");
     setFeatured(Boolean(program.featured));
     setVerificationStatus(
@@ -1103,53 +1176,228 @@ export default function AdminPage() {
           )}
         </div>
 
+<div>
+  <input
+    placeholder="Image URL (optional if uploading a file)"
+    value={imageUrl}
+    onChange={(e) => {
+      setImageUrl(e.target.value);
+      if (e.target.value.trim()) {
+        setImagePreviewUrl(e.target.value);
+        setImageFile(null);
+      }
+    }}
+    style={inputStyle}
+  />
+  {formErrors.imageUrl && (
+    <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
+      {formErrors.imageUrl}
+    </div>
+  )}
+</div>
+
+<div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: 8,
+      fontWeight: 600,
+    }}
+  >
+    Upload Image
+  </label>
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      const file = e.target.files?.[0] || null;
+      setImageFile(file);
+
+      if (file) {
+        const localPreview = URL.createObjectURL(file);
+        setImagePreviewUrl(localPreview);
+        setImageUrl("");
+      }
+    }}
+    style={{
+      ...inputStyle,
+      padding: 10,
+      background: "#fff",
+    }}
+  />
+
+  <div style={{ color: "#666", fontSize: 12, marginTop: 6 }}>
+    You can either paste an image URL or upload an image file.
+  </div>
+</div>
+
+{imagePreviewUrl && (
+  <div style={{ marginTop: 12 }}>
+    <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+      Image Preview
+    </div>
+
+    <img
+      src={imagePreviewUrl}
+      alt="Preview"
+      style={{
+        width: "100%",
+        maxWidth: 420,
+        height: 180,
+        objectFit: "cover",
+        borderRadius: 8,
+        border: "1px solid #ddd",
+      }}
+    />
+  </div>
+)}
+
         <div>
-          <input
-            placeholder="Image URL"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            style={inputStyle}
-          />
-          {formErrors.imageUrl && (
-            <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
-              {formErrors.imageUrl}
-            </div>
-          )}
-        </div>
+  <div
+    style={{
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      marginBottom: 10,
+    }}
+  >
+    <button
+      type="button"
+      onClick={() =>
+        setDescription((prev) =>
+          insertAtCursor(
+            prev,
+            "\nBenefits:\n- \n- \n",
+            descriptionRef.current
+          )
+        )
+      }
+      style={{
+        padding: "8px 12px",
+        borderRadius: 8,
+        border: "1px solid #ddd",
+        background: "#fff",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      + Benefits
+    </button>
 
-        {imageUrl && isValidUrl(imageUrl) && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-              Image Preview
-            </div>
+    <button
+      type="button"
+      onClick={() =>
+        setDescription((prev) =>
+          insertAtCursor(
+            prev,
+            "\nEligibility:\n- \n- \n",
+            descriptionRef.current
+          )
+        )
+      }
+      style={{
+        padding: "8px 12px",
+        borderRadius: 8,
+        border: "1px solid #ddd",
+        background: "#fff",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      + Eligibility
+    </button>
 
-            <img
-              src={imageUrl}
-              alt="Preview"
-              style={{
-                width: "100%",
-                maxWidth: 420,
-                height: 180,
-                objectFit: "cover",
-                borderRadius: 8,
-                border: "1px solid #ddd",
-              }}
-            />
-          </div>
-        )}
+    <button
+      type="button"
+      onClick={() =>
+        setDescription((prev) =>
+          insertAtCursor(
+            prev,
+            "\nHow to Apply:\n1. \n2. \n3. \n",
+            descriptionRef.current
+          )
+        )
+      }
+      style={{
+        padding: "8px 12px",
+        borderRadius: 8,
+        border: "1px solid #ddd",
+        background: "#fff",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      + How to Apply
+    </button>
 
-        <textarea
-          placeholder="Program Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          style={{
-            padding: 12,
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            minHeight: 140,
-            resize: "vertical",
-          }}
-        />
+    <button
+      type="button"
+      onClick={() =>
+        setDescription((prev) =>
+          insertAtCursor(
+            prev,
+            "\nDeadline:\n- \n",
+            descriptionRef.current
+          )
+        )
+      }
+      style={{
+        padding: "8px 12px",
+        borderRadius: 8,
+        border: "1px solid #ddd",
+        background: "#fff",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      + Deadline
+    </button>
+  </div>
+
+  <textarea
+    ref={descriptionRef}
+    placeholder="Program Description"
+    value={description}
+    onChange={(e) => setDescription(e.target.value)}
+    style={{
+      padding: 12,
+      borderRadius: 8,
+      border: "1px solid #ddd",
+      minHeight: 260,
+      resize: "vertical",
+      width: "100%",
+      lineHeight: 1.6,
+      fontSize: 15,
+    }}
+  />
+  <button
+  type="button"
+  onClick={() => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = description.slice(start, end);
+    const wrapped = `**${selectedText || "bold text"}**`;
+
+    setDescription((prev) => 
+      prev.slice(0, start) + wrapped + prev.slice(end)
+    );
+  }}
+  style={{
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #ddd",
+    background: "#fff",
+    cursor: "pointer",
+    fontWeight: 700,
+  }}
+>
+  Bold
+</button>
+</div>
 
         <div
           style={{
@@ -1204,26 +1452,28 @@ export default function AdminPage() {
         <div style={{ marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button
             onClick={editingId ? updateProgram : addProgram}
-            disabled={loading}
+            disabled={loading || uploadingImage}
             style={{
               padding: "12px 16px",
               background: "black",
               color: "white",
               borderRadius: 8,
               border: "none",
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: loading || uploadingImage ? "not-allowed" : "pointer",
               fontSize: 16,
               fontWeight: 600,
               width: "fit-content",
               minWidth: 170,
-              opacity: loading ? 0.7 : 1,
+              opacity: loading || uploadingImage ? 0.7 : 1,
             }}
           >
-            {loading
-              ? "Saving..."
-              : editingId
-              ? "Update Opportunity"
-              : "Add Opportunity"}
+            {uploadingImage
+  ? "Uploading image..."
+  : loading
+  ? "Saving..."
+  : editingId
+  ? "Update Opportunity"
+  : "Add Opportunity"}
           </button>
 
           {editingId && (

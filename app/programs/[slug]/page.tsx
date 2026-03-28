@@ -81,6 +81,112 @@ const infoCardStyle = {
   padding: 16,
 } as const;
 
+function renderInlineFormatting(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+
+  return parts.map((part, index) => {
+    const isBold = /^\*\*.*\*\*$/.test(part);
+
+    if (isBold) {
+      const cleanText = part.replace(/^\*\*/, "").replace(/\*\*$/, "");
+      return <strong key={index}>{cleanText}</strong>;
+    }
+
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function renderDescription(content: string) {
+  const lines = content.split("\n");
+
+  return lines.map((line, index) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      return <div key={index} style={{ height: 12 }} />;
+    }
+
+    const isBullet = trimmed.startsWith("- ");
+    const isNumbered = /^\d+\.\s/.test(trimmed);
+    const isHeading =
+      trimmed.endsWith(":") &&
+      trimmed.length < 80 &&
+      !isBullet &&
+      !isNumbered;
+
+    if (isHeading) {
+      return (
+        <h3
+          key={index}
+          style={{
+            margin: "20px 0 10px",
+            fontSize: 20,
+            fontWeight: 800,
+            color: "#111",
+          }}
+        >
+          {renderInlineFormatting(trimmed)}
+        </h3>
+      );
+    }
+
+    if (isBullet) {
+      return (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 10,
+            marginBottom: 10,
+            color: "#333",
+            lineHeight: 1.8,
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>•</span>
+          <span>{renderInlineFormatting(trimmed.slice(2))}</span>
+        </div>
+      );
+    }
+
+    if (isNumbered) {
+      const match = trimmed.match(/^(\d+\.)\s(.*)$/);
+
+      return (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 10,
+            marginBottom: 10,
+            color: "#333",
+            lineHeight: 1.8,
+          }}
+        >
+          <span style={{ fontWeight: 700, minWidth: 26 }}>
+            {match?.[1] || ""}
+          </span>
+          <span>{renderInlineFormatting(match?.[2] || trimmed)}</span>
+        </div>
+      );
+    }
+
+    return (
+      <p
+        key={index}
+        style={{
+          margin: "0 0 12px",
+          lineHeight: 1.8,
+          color: "#333",
+        }}
+      >
+        {renderInlineFormatting(trimmed)}
+      </p>
+    );
+  });
+}
+
 export default async function ProgramDetailPage({
   params,
 }: {
@@ -372,16 +478,14 @@ export default async function ProgramDetailPage({
           >
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Program Description</h2>
 
-            <p
+            <div
               style={{
-                lineHeight: 1.7,
-                whiteSpace: "pre-line",
                 color: "#333",
-                margin: 0,
+                fontSize: 16,
               }}
             >
-              {program.description}
-            </p>
+              {renderDescription(program.description)}
+            </div>
           </div>
         )}
 
