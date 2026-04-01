@@ -156,12 +156,12 @@ function ProgramImage({
       onError={() => setHasError(true)}
       style={{
         width: "100%",
-        height: 150,
-        fontSize: 13,
-        objectFit: "cover",
-        borderRadius: 10,
-        marginBottom: 12,
-        display: "block",
+        height: 170,
+fontSize: 13,
+objectFit: "cover",
+borderRadius: 12,
+marginBottom: 14,
+display: "block",
       }}
     />
   );
@@ -175,6 +175,18 @@ const inputStyle = {
   outline: "none",
   background: "white",
 } as const;
+
+const actionButtonStyle = {
+  width: "100%",
+  minWidth: 0,
+  textAlign: "center" as const,
+  padding: "11px 10px",
+  borderRadius: 10,
+  fontWeight: 700,
+  fontSize: 13,
+  whiteSpace: "nowrap" as const,
+  boxSizing: "border-box" as const,
+};
 
 export default function ProgramsClient({
   initialPrograms,
@@ -198,37 +210,35 @@ export default function ProgramsClient({
   const [copiedProgramId, setCopiedProgramId] = useState<string | null>(null);
 
   async function trackClick(programId: string, action: string) {
-  try {
-    const res = await fetch("/api/track-click", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      keepalive: true,
-      body: JSON.stringify({
-        program_id: programId,
-        action,
-      }),
-    });
+    try {
+      const res = await fetch("/api/track-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        keepalive: true,
+        body: JSON.stringify({
+          program_id: programId,
+          action,
+        }),
+      });
 
-    const result = await res.json().catch(() => null);
+      const result = await res.json().catch(() => null);
 
-    if (!res.ok) {
-      console.error("Tracking API error:", result || res.statusText);
+      if (!res.ok) {
+        console.error("Tracking API error:", result || res.statusText);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Tracking failed:", err);
       return false;
     }
-
-    console.log("Tracking success:", result);
-    return true;
-  } catch (err) {
-    console.error("Tracking failed:", err);
-    return false;
   }
-}
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-
     const shouldSortByDeadline = sort === "latest";
     const sorted = [...initialPrograms];
 
@@ -343,7 +353,7 @@ export default function ProgramsClient({
   }
 
   return (
-    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 16px" }}>
       <div style={{ marginBottom: 10 }}>
         {showBackLink && (
           <a
@@ -560,8 +570,8 @@ export default function ProgramsClient({
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 20,
-              marginTop: 24,
+              gap: 18,
+marginTop: 22,
             }}
           >
             {filtered.map((p) => {
@@ -569,106 +579,123 @@ export default function ProgramsClient({
               const isApplyDisabled = !p.official_url;
 
               return (
-                <a
-                  key={p.id}
-                  href={`/programs/${p.slug}`}
-                  style={{
-                    display: "block",
-                    border: "1px solid #ddd",
-                    padding: 20,
-                    borderRadius: 12,
-                    background: "#fafafa",
-                    minWidth: 150,
-                    textDecoration: "none",
-                    color: "inherit",
-                    transition: "all 0.2s ease",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                  }}
-                >
-                  <ProgramImage src={p.image_url} alt={p.title} />
-
-                  <div
+               <div
+  key={p.id}
+  style={{
+    display: "block",
+    border: "1px solid #e5e7eb",
+    padding: 18,
+    borderRadius: 16,
+    background: "#ffffff",
+    minWidth: 0,
+    color: "inherit",
+    transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
+    overflow: "hidden",
+  }}
+>
+                  <a
+                    href={`/programs/${p.slug}`}
                     style={{
-                      fontSize: 20,
-                      fontWeight: 600,
-                      color: "black",
-                      marginBottom: 10,
-                      lineHeight: 1.4,
+                      textDecoration: "none",
+                      color: "inherit",
+                      display: "block",
                     }}
                   >
-                    {p.title}
-                  </div>
+                    <ProgramImage src={p.image_url} alt={p.title} />
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <DeadlineBadge deadline={p.deadline} />
-                    <Badge status={p.verification_status} />
-                  </div>
-
-                  <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                    <div>
-                      <strong>Country:</strong> {p.country || "—"}
-                    </div>
-                    <div>
-                      <strong>Type:</strong> {p.type || "—"}
-                    </div>
-                    <div>
-                      <strong>Funding:</strong> {p.funding_type || "—"}
-                    </div>
-                    <div>
-                      <strong>Deadline:</strong> {p.deadline || "—"}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: 14,
-                      display: "flex",
-                      gap: 10,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
+                    <div
                       style={{
-                        display: "inline-block",
-                        padding: "10px 16px",
+                        fontSize: 21,
+fontWeight: 700,
+color: "#111",
+marginBottom: 12,
+lineHeight: 1.35,
+letterSpacing: "-0.2px",
+                      }}
+                    >
+                      {p.title}
+                    </div>
+
+                    <div
+  style={{
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginBottom: 8,
+  }}
+>
+                      <DeadlineBadge deadline={p.deadline} />
+                      <Badge status={p.verification_status} />
+                    </div>
+
+                    <div
+  style={{
+    marginTop: 10,
+    display: "grid",
+    gap: 8,
+    fontSize: 16,
+    lineHeight: 1.55,
+    color: "#222",
+  }}
+>
+                      <div>
+                        <strong>Country:</strong> {p.country || "—"}
+                      </div>
+                      <div>
+                        <strong>Type:</strong> {p.type || "—"}
+                      </div>
+                      <div>
+                        <strong>Funding:</strong> {p.funding_type || "—"}
+                      </div>
+                      <div>
+                        <strong>Deadline:</strong> {p.deadline || "—"}
+                      </div>
+                    </div>
+                  </a>
+
+                  <div
+  style={{
+    marginTop: 16,
+    display: "grid",
+    gridTemplateColumns: "1.25fr 1fr 1fr",
+    gap: 8,
+    alignItems: "stretch",
+  }}
+>
+                    <a
+                      href={`/programs/${p.slug}`}
+                      style={{
+                        ...actionButtonStyle,
                         background: "#111",
-                        color: "white",
-                        borderRadius: 8,
-                        fontWeight: 600,
+color: "white",
+textDecoration: "none",
+boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                       }}
                     >
                       View Details
-                    </span>
+                    </a>
 
                     <button
-  type="button"
-  onClick={async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
 
-    if (!isApplyDisabled && p.id) {
-      await trackClick(p.id, "apply_now");
-      window.open(applyLink, "_blank", "noopener,noreferrer");
-    }
-  }}
+                        if (!isApplyDisabled && p.id) {
+                          await trackClick(p.id, "apply_now");
+                          window.open(applyLink, "_blank", "noopener,noreferrer");
+                        }
+                      }}
                       disabled={isApplyDisabled}
                       style={{
-                        display: "inline-block",
-                        padding: "10px 16px",
-                        background: isApplyDisabled ? "#999" : "#0070f3",
-                        color: "white",
-                        borderRadius: 8,
-                        border: "none",
-                        cursor: isApplyDisabled ? "not-allowed" : "pointer",
-                        fontWeight: 600,
+                        ...actionButtonStyle,
+                        background: isApplyDisabled ? "#a3a3a3" : "#1677ff",
+color: "white",
+border: "none",
+cursor: isApplyDisabled ? "not-allowed" : "pointer",
+boxShadow: isApplyDisabled ? "none" : "0 2px 8px rgba(22,119,255,0.18)",
                       }}
                     >
                       Apply Now
@@ -698,14 +725,11 @@ export default function ProgramsClient({
                         }
                       }}
                       style={{
-                        display: "inline-block",
-                        padding: "10px 16px",
+                        ...actionButtonStyle,
                         background: "#fff",
-                        color: "#111",
-                        borderRadius: 8,
-                        border: "1px solid #ddd",
-                        cursor: "pointer",
-                        fontWeight: 600,
+color: "#111",
+border: "1px solid #d9d9d9",
+cursor: "pointer",
                       }}
                     >
                       {copiedProgramId === p.id ? "Copied!" : "Copy Link"}
@@ -717,14 +741,15 @@ export default function ProgramsClient({
                       Application link not available yet.
                     </div>
                   )}
-                </a>
+                </div>
               );
             })}
           </div>
 
           <div
             style={{
-              marginTop: 32,
+              marginTop: 20,
+              marginBottom: 0,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",

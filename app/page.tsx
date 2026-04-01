@@ -54,6 +54,16 @@ const cardStyle = {
   transition: "transform 0.2s ease, box-shadow 0.2s ease",
 } as const;
 
+const featuredCardStyle = {
+  border: "1px solid #f3e7b3",
+  padding: 18,
+  borderRadius: 18,
+  background: "linear-gradient(180deg, #fffdf7 0%, #ffffff 100%)",
+  minWidth: 290,
+  boxShadow: "0 8px 24px rgba(138,90,0,0.08)",
+  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+} as const;
+
 function isNotExpired(deadline?: string | null) {
   if (!deadline) return true;
 
@@ -122,16 +132,31 @@ function getMetricMap(entries: [string, number][]) {
   return new Map(entries);
 }
 
+function formatDeadline(deadline?: string | null) {
+  if (!deadline) return "No deadline";
+
+  const date = new Date(deadline);
+  if (Number.isNaN(date.getTime())) return deadline;
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
 function ProgramCard({
   program,
   badge,
   badgeStyle,
   meta,
+  featured = false,
 }: {
   program: Program;
   badge?: string;
   badgeStyle?: Record<string, string | number>;
   meta?: string;
+  featured?: boolean;
 }) {
   if (!program.slug) return null;
 
@@ -141,7 +166,7 @@ function ProgramCard({
       programId={program.id}
       className="horizontal-card"
       style={{
-        ...cardStyle,
+        ...(featured ? featuredCardStyle : cardStyle),
         display: "block",
         textDecoration: "none",
         color: "inherit",
@@ -154,10 +179,10 @@ function ProgramCard({
           loading="lazy"
           style={{
             width: "100%",
-            height: 140,
+            height: featured ? 170 : 140,
             objectFit: "cover",
-            borderRadius: 8,
-            marginBottom: 10,
+            borderRadius: 10,
+            marginBottom: 12,
             display: "block",
           }}
         />
@@ -169,8 +194,8 @@ function ProgramCard({
             display: "inline-block",
             marginBottom: 10,
             padding: "6px 10px",
-            borderRadius: 8,
-            fontWeight: 600,
+            borderRadius: 999,
+            fontWeight: 700,
             fontSize: 13,
             ...badgeStyle,
           }}
@@ -181,17 +206,43 @@ function ProgramCard({
 
       <div
         style={{
-          fontSize: 18,
-          fontWeight: 600,
+          fontSize: featured ? 20 : 18,
+          fontWeight: 700,
           color: "black",
+          lineHeight: 1.4,
         }}
       >
         {program.title}
       </div>
 
-      <div style={{ marginTop: 6, fontSize: 14 }}>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 14,
+          color: "#555",
+          lineHeight: 1.5,
+        }}
+      >
         {meta || `${program.country || "—"} • ${program.funding_type || "—"}`}
       </div>
+
+      {featured && (
+        <div
+          style={{
+            marginTop: 12,
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#6b7280",
+          }}
+        >
+          {program.country && <span>🌍 {program.country}</span>}
+          {program.type && <span>📚 {program.type}</span>}
+          {program.deadline && <span>⏰ {formatDeadline(program.deadline)}</span>}
+        </div>
+      )}
     </TrackedProgramLink>
   );
 }
@@ -232,6 +283,10 @@ export default async function Home() {
     );
   });
 
+  const verifiedActivePrograms = programs.filter(
+    (p) => p.verification_status === "verified" && isNotExpired(p.deadline)
+  );
+
   const { data: clickData } = await supabase
     .from("clicks")
     .select("program_id,title,type,action,created_at")
@@ -268,20 +323,13 @@ export default async function Home() {
   const mostAppliedMap = getMetricMap(mostAppliedRanking);
   const mostSharedMap = getMetricMap(mostSharedRanking);
 
-  const trendingFromClicks = pickProgramsByRank(programs, overallClickRanking, 6);
-
-  const featuredPrograms = programs
-    .filter(
-      (p) =>
-        p.featured &&
-        p.verification_status === "verified" &&
-        isNotExpired(p.deadline)
-    )
+  const featuredPrograms = verifiedActivePrograms
+    .filter((p) => p.featured)
     .slice(0, 6);
 
   const featuredIds = new Set(featuredPrograms.map((p) => p.id));
 
-  const closingSoon = programs
+  const closingSoon = verifiedActivePrograms
     .filter((p) => {
       if (!p.deadline) return false;
       if (featuredIds.has(p.id)) return false;
@@ -298,67 +346,74 @@ export default async function Home() {
 
   const closingSoonIds = new Set(closingSoon.map((p) => p.id));
 
-  const newlyAdded = programs
+  const trendingFromClicks = pickProgramsByRank(
+    verifiedActivePrograms,
+    overallClickRanking,
+    6,
+    new Set([...featuredIds, ...closingSoonIds])
+  );
+
+  const trendingFromClicksIds = new Set(trendingFromClicks.map((p) => p.id));
+
+  const newlyAdded = verifiedActivePrograms
     .filter(
       (p) =>
         !featuredIds.has(p.id) &&
         !closingSoonIds.has(p.id) &&
-        isNotExpired(p.deadline)
+        !trendingFromClicksIds.has(p.id)
     )
     .slice(0, 4);
 
   const newlyAddedIds = new Set(newlyAdded.map((p) => p.id));
 
-  const trending = programs
-    .filter(
-      (p) =>
-        !featuredIds.has(p.id) &&
-        !closingSoonIds.has(p.id) &&
-        !newlyAddedIds.has(p.id) &&
-        p.verification_status === "verified" &&
-        isNotExpired(p.deadline)
-    )
-    .slice(0, 3);
-
   const excludedForAnalytics = new Set<string>([
     ...featuredIds,
     ...closingSoonIds,
     ...newlyAddedIds,
+    ...trendingFromClicksIds,
   ]);
 
   const trendingThisWeek = pickProgramsByRank(
-    programs,
+    verifiedActivePrograms,
     weightedTrending7dRanking,
     6,
     excludedForAnalytics
   );
 
   const trendingThisMonth = pickProgramsByRank(
-    programs,
+    verifiedActivePrograms,
     weightedTrending30dRanking,
     6,
     excludedForAnalytics
   );
 
   const mostApplied = pickProgramsByRank(
-    programs,
+    verifiedActivePrograms,
     mostAppliedRanking,
     6,
     excludedForAnalytics
   );
 
   const mostShared = pickProgramsByRank(
-    programs,
+    verifiedActivePrograms,
     mostSharedRanking,
     6,
     excludedForAnalytics
   );
 
+  const popularPrograms = verifiedActivePrograms
+    .filter(
+      (p) =>
+        !featuredIds.has(p.id) &&
+        !closingSoonIds.has(p.id)
+    )
+    .slice(0, 6);
+
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 32px 48px" }}>
       <div
         style={{
-          marginBottom: 80,
+          marginBottom: 48,
           padding: "56px 0 32px",
         }}
       >
@@ -483,10 +538,92 @@ export default async function Home() {
         </div>
       </div>
 
+      {featuredPrograms.length > 0 && (
+        <div
+          style={{
+            marginTop: 0,
+            marginBottom: 72,
+            border: "1px solid #f3e7b3",
+            borderRadius: 24,
+            padding: "26px 22px 24px",
+            background: "linear-gradient(180deg, #fffaf0 0%, #ffffff 100%)",
+            boxShadow: "0 10px 30px rgba(138,90,0,0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 16,
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              marginBottom: 18,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  display: "inline-block",
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "#fff4d6",
+                  color: "#8a5a00",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                ⭐ Editor’s Picks
+              </div>
+
+              <h2 style={{ margin: "0 0 8px 0", fontSize: 30, fontWeight: 800 }}>
+                Featured Opportunities
+              </h2>
+
+              <p style={{ color: "#666", margin: 0, maxWidth: 760, lineHeight: 1.6 }}>
+                Hand-picked opportunities highlighted by TripDoc for faster discovery.
+                These are strong options worth checking first.
+              </p>
+            </div>
+
+            <a
+              href="#all-opportunities"
+              style={{
+                textDecoration: "none",
+                fontWeight: 700,
+                color: "#8a5a00",
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "#fff",
+                border: "1px solid #f3e7b3",
+              }}
+            >
+              Browse all →
+            </a>
+          </div>
+
+          <HorizontalRow>
+            {featuredPrograms.map((p) => (
+              <ProgramCard
+                key={p.id}
+                program={p}
+                featured
+                badge="⭐ Featured"
+                badgeStyle={{
+                  background: "#fff4d6",
+                  color: "#8a5a00",
+                }}
+                meta={`${p.country || "—"} • ${p.funding_type || "—"}`}
+              />
+            ))}
+          </HorizontalRow>
+        </div>
+      )}
+
       <div
         style={{
-          marginTop: 20,
-          marginBottom: 72,
+          marginTop: 8,
+          marginBottom: 48,
           border: "1px solid #e5e7eb",
           borderRadius: 18,
           padding: "24px 22px",
@@ -559,7 +696,7 @@ export default async function Home() {
         </div>
       </div>
 
-      <div style={{ marginTop: 72 }}>
+      <div style={{ marginTop: 48 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           Browse by Category
         </h2>
@@ -586,32 +723,7 @@ export default async function Home() {
         </HorizontalRow>
       </div>
 
-      {featuredPrograms.length > 0 && (
-        <div style={{ marginTop: 72 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            ⭐ Featured Opportunities
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Hand-picked opportunities highlighted by TripDoc for faster discovery.
-          </p>
-
-          <HorizontalRow>
-            {featuredPrograms.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge="⭐ Featured"
-                badgeStyle={{
-                  background: "#fff4d6",
-                  color: "#8a5a00",
-                }}
-              />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      <div style={{ marginTop: 72 }}>
+      <div style={{ marginTop: 56 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           🔥 Closing Soon
         </h2>
@@ -632,7 +744,7 @@ export default async function Home() {
                   background: "#fff1db",
                   color: "#a05a00",
                 }}
-                meta={`Deadline: ${p.deadline || "—"}`}
+                meta={`Deadline: ${formatDeadline(p.deadline)}`}
               />
             ))}
           </HorizontalRow>
@@ -640,7 +752,7 @@ export default async function Home() {
       </div>
 
       {trendingFromClicks.length > 0 && (
-        <div style={{ marginTop: 72 }}>
+        <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
             📈 Trending by Users
           </h2>
@@ -665,7 +777,7 @@ export default async function Home() {
       )}
 
       {trendingThisWeek.length > 0 && (
-        <div style={{ marginTop: 72 }}>
+        <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
             📊 Trending This Week
           </h2>
@@ -690,7 +802,7 @@ export default async function Home() {
       )}
 
       {trendingThisMonth.length > 0 && (
-        <div style={{ marginTop: 72 }}>
+        <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
             🗓️ Trending This Month
           </h2>
@@ -715,7 +827,7 @@ export default async function Home() {
       )}
 
       {mostApplied.length > 0 && (
-        <div style={{ marginTop: 72 }}>
+        <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
             📝 Most Applied
           </h2>
@@ -740,7 +852,7 @@ export default async function Home() {
       )}
 
       {mostShared.length > 0 && (
-        <div style={{ marginTop: 72 }}>
+        <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
             🔗 Most Shared
           </h2>
@@ -764,7 +876,7 @@ export default async function Home() {
         </div>
       )}
 
-      <div style={{ marginTop: 72 }}>
+      <div style={{ marginTop: 56 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           🔥 Popular Opportunities
         </h2>
@@ -774,21 +886,13 @@ export default async function Home() {
         </p>
 
         <HorizontalRow>
-          {programs
-            .filter(
-              (p) =>
-                p.verification_status === "verified" &&
-                p.deadline &&
-                new Date(p.deadline + "T23:59:59") > new Date()
-            )
-            .slice(0, 6)
-            .map((p) => (
-              <ProgramCard key={p.id} program={p} />
-            ))}
+          {popularPrograms.map((p) => (
+            <ProgramCard key={p.id} program={p} />
+          ))}
         </HorizontalRow>
       </div>
 
-      <div style={{ marginTop: 72 }}>
+      <div style={{ marginTop: 56 }}>
         <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
           Browse by Country
         </h2>
@@ -816,7 +920,7 @@ export default async function Home() {
       </div>
 
       {newlyAdded.length > 0 && (
-        <div style={{ marginTop: 72 }}>
+        <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
             🆕 Newly Added Opportunities
           </h2>
@@ -826,23 +930,6 @@ export default async function Home() {
 
           <HorizontalRow>
             {newlyAdded.map((p) => (
-              <ProgramCard key={p.id} program={p} />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      {trending.length > 0 && (
-        <div style={{ marginTop: 72 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            🔥 Trending Opportunities
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Recently added and popular opportunities on TripDoc.
-          </p>
-
-          <HorizontalRow>
-            {trending.map((p) => (
               <ProgramCard key={p.id} program={p} />
             ))}
           </HorizontalRow>
