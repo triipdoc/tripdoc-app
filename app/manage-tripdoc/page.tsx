@@ -5,8 +5,6 @@ import { supabase } from "../../lib/supabase";
 
 type VerificationStatus = "verified" | "pending";
 
-
-
 type Program = {
   id: string;
   title: string;
@@ -87,7 +85,6 @@ type ProgramsResponse = {
 
 const PAGE_SIZE = 10;
 
-
 function generateSlug(text: string) {
   return text
     .toLowerCase()
@@ -159,15 +156,10 @@ function insertAtCursor(
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
 
-  return (
-    currentValue.slice(0, start) +
-    insertText +
-    currentValue.slice(end)
-  );
+  return currentValue.slice(0, start) + insertText + currentValue.slice(end);
 }
 
 async function uploadProgramImage(file: File) {
-  const ext = file.name.split(".").pop() || "jpg";
   const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "-");
   const fileName = `${Date.now()}-${safeName}`;
   const filePath = `programs/${fileName}`;
@@ -230,12 +222,10 @@ export default function AdminPage() {
   const [originalSlug, setOriginalSlug] = useState("");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-const [imagePreviewUrl, setImagePreviewUrl] = useState("");
-const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
-
-  
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
 
   const loadPrograms = async ({
     page = currentPage,
@@ -328,25 +318,25 @@ const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
   }, [currentPage, search, sortBy]);
 
   const resetForm = () => {
-  setTitle("");
-  setSlug("");
-  setCountry("");
-  setType("");
-  setFunding("");
-  setDeadline("");
-  setDescription("");
-  setOfficialUrl("");
-  setImageUrl("");
-  setImageFile(null);
-  setImagePreviewUrl("");
-  setFeatured(false);
-  setVerificationStatus("verified");
-  setEditingId(null);
-  setFormErrors({});
-  setSlugTouched(false);
-  setOriginalTitle("");
-  setOriginalSlug("");
-};
+    setTitle("");
+    setSlug("");
+    setCountry("");
+    setType("");
+    setFunding("");
+    setDeadline("");
+    setDescription("");
+    setOfficialUrl("");
+    setImageUrl("");
+    setImageFile(null);
+    setImagePreviewUrl("");
+    setFeatured(false);
+    setVerificationStatus("verified");
+    setEditingId(null);
+    setFormErrors({});
+    setSlugTouched(false);
+    setOriginalTitle("");
+    setOriginalSlug("");
+  };
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
@@ -403,34 +393,34 @@ const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
     if (Object.keys(nextErrors).length > 0) return;
 
     try {
-  setLoading(true);
+      setLoading(true);
 
-  let finalImageUrl = imageUrl.trim();
+      let finalImageUrl = imageUrl.trim();
 
-  if (imageFile) {
-    setUploadingImage(true);
-    finalImageUrl = await uploadProgramImage(imageFile);
-  }
+      if (imageFile) {
+        setUploadingImage(true);
+        finalImageUrl = await uploadProgramImage(imageFile);
+      }
 
-  const res = await fetch("/api/admin/programs", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    title: title.trim(),
-    slug: finalSlug,
-    country: country.trim(),
-    type: type.trim(),
-    funding_type: funding.trim(),
-    deadline: deadline || "",
-    official_url: officialUrl.trim(),
-    image_url: finalImageUrl,
-    description: description.trim(),
-    verification_status: verificationStatus,
-    featured,
-  }),
-});
+      const res = await fetch("/api/admin/programs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          slug: finalSlug,
+          country: country.trim(),
+          type: type.trim(),
+          funding_type: funding.trim(),
+          deadline: deadline || "",
+          official_url: officialUrl.trim(),
+          image_url: finalImageUrl,
+          description: description.trim(),
+          verification_status: verificationStatus,
+          featured,
+        }),
+      });
 
       const result = await res.json();
 
@@ -464,7 +454,7 @@ const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
       });
     } finally {
       setLoading(false);
-setUploadingImage(false);
+      setUploadingImage(false);
     }
   };
 
@@ -501,16 +491,16 @@ setUploadingImage(false);
     if (Object.keys(nextErrors).length > 0) return;
 
     try {
-  setLoading(true);
+      setLoading(true);
 
-  let finalImageUrl = imageUrl.trim();
+      let finalImageUrl = imageUrl.trim();
 
-  if (imageFile) {
-    setUploadingImage(true);
-    finalImageUrl = await uploadProgramImage(imageFile);
-  }
+      if (imageFile) {
+        setUploadingImage(true);
+        finalImageUrl = await uploadProgramImage(imageFile);
+      }
 
-  const res = await fetch(`/api/admin/programs/${editingId}`, {
+      const res = await fetch(`/api/admin/programs/${editingId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -565,7 +555,7 @@ setUploadingImage(false);
       });
     } finally {
       setLoading(false);
-setUploadingImage(false);
+      setUploadingImage(false);
     }
   };
 
@@ -652,63 +642,63 @@ setUploadingImage(false);
   };
 
   const deleteProgram = async (id: string, programTitle: string) => {
-  const typedTitle = window.prompt(
-    `To delete this program, type the exact title below:\n\n${programTitle}`
-  );
+    const typedTitle = window.prompt(
+      `To delete this program, type the exact title below:\n\n${programTitle}`
+    );
 
-  if (typedTitle === null) return;
+    if (typedTitle === null) return;
 
-  if (typedTitle.trim() !== programTitle.trim()) {
-    setNotice({
-      type: "error",
-      message: "Delete cancelled. Title did not match exactly.",
-    });
-    return;
-  }
-
-  try {
-    setDeleteLoadingId(id);
-    setNotice(null);
-
-    const res = await fetch(`/api/admin/programs/${id}`, {
-      method: "DELETE",
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
+    if (typedTitle.trim() !== programTitle.trim()) {
       setNotice({
         type: "error",
-        message: result.error || "Failed to delete program.",
+        message: "Delete cancelled. Title did not match exactly.",
       });
       return;
     }
 
-    if (editingId === id) {
-      resetForm();
+    try {
+      setDeleteLoadingId(id);
+      setNotice(null);
+
+      const res = await fetch(`/api/admin/programs/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        setNotice({
+          type: "error",
+          message: result.error || "Failed to delete program.",
+        });
+        return;
+      }
+
+      if (editingId === id) {
+        resetForm();
+      }
+
+      setNotice({ type: "success", message: "Program deleted successfully." });
+
+      const nextPage =
+        programs.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+
+      setCurrentPage(nextPage);
+      await loadPrograms({
+        page: nextPage,
+        searchValue: search,
+        sortValue: sortBy,
+      });
+    } catch (error) {
+      console.error(error);
+      setNotice({
+        type: "error",
+        message: "Something went wrong while deleting the program.",
+      });
+    } finally {
+      setDeleteLoadingId(null);
     }
-
-    setNotice({ type: "success", message: "Program deleted successfully." });
-
-    const nextPage =
-      programs.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
-
-    setCurrentPage(nextPage);
-    await loadPrograms({
-      page: nextPage,
-      searchValue: search,
-      sortValue: sortBy,
-    });
-  } catch (error) {
-    console.error(error);
-    setNotice({
-      type: "error",
-      message: "Something went wrong while deleting the program.",
-    });
-  } finally {
-    setDeleteLoadingId(null);
-  }
-};
+  };
 
   const startEdit = (program: Program) => {
     setEditingId(program.id);
@@ -721,7 +711,7 @@ setUploadingImage(false);
     setOfficialUrl(program.official_url || "");
     setImageUrl(program.image_url || "");
     setImageFile(null);
-setImagePreviewUrl(program.image_url || "");
+    setImagePreviewUrl(program.image_url || "");
     setDescription(program.description || "");
     setFeatured(Boolean(program.featured));
     setVerificationStatus(
@@ -1176,228 +1166,229 @@ setImagePreviewUrl(program.image_url || "");
           )}
         </div>
 
-<div>
-  <input
-    placeholder="Image URL (optional if uploading a file)"
-    value={imageUrl}
-    onChange={(e) => {
-      setImageUrl(e.target.value);
-      if (e.target.value.trim()) {
-        setImagePreviewUrl(e.target.value);
-        setImageFile(null);
-      }
-    }}
-    style={inputStyle}
-  />
-  {formErrors.imageUrl && (
-    <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
-      {formErrors.imageUrl}
-    </div>
-  )}
-</div>
-
-<div>
-  <label
-    style={{
-      display: "block",
-      marginBottom: 8,
-      fontWeight: 600,
-    }}
-  >
-    Upload Image
-  </label>
-
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) => {
-      const file = e.target.files?.[0] || null;
-      setImageFile(file);
-
-      if (file) {
-        const localPreview = URL.createObjectURL(file);
-        setImagePreviewUrl(localPreview);
-        setImageUrl("");
-      }
-    }}
-    style={{
-      ...inputStyle,
-      padding: 10,
-      background: "#fff",
-    }}
-  />
-
-  <div style={{ color: "#666", fontSize: 12, marginTop: 6 }}>
-    You can either paste an image URL or upload an image file.
-  </div>
-</div>
-
-{imagePreviewUrl && (
-  <div style={{ marginTop: 12 }}>
-    <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-      Image Preview
-    </div>
-
-    <img
-      src={imagePreviewUrl}
-      alt="Preview"
-      style={{
-        width: "100%",
-        maxWidth: 420,
-        height: 180,
-        objectFit: "cover",
-        borderRadius: 8,
-        border: "1px solid #ddd",
-      }}
-    />
-  </div>
-)}
+        <div>
+          <input
+            placeholder="Image URL (optional if uploading a file)"
+            value={imageUrl}
+            onChange={(e) => {
+              setImageUrl(e.target.value);
+              if (e.target.value.trim()) {
+                setImagePreviewUrl(e.target.value);
+                setImageFile(null);
+              }
+            }}
+            style={inputStyle}
+          />
+          {formErrors.imageUrl && (
+            <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
+              {formErrors.imageUrl}
+            </div>
+          )}
+        </div>
 
         <div>
-  <div
-    style={{
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap",
-      marginBottom: 10,
-    }}
-  >
-    <button
-      type="button"
-      onClick={() =>
-        setDescription((prev) =>
-          insertAtCursor(
-            prev,
-            "\nBenefits:\n- \n- \n",
-            descriptionRef.current
-          )
-        )
-      }
-      style={{
-        padding: "8px 12px",
-        borderRadius: 8,
-        border: "1px solid #ddd",
-        background: "#fff",
-        cursor: "pointer",
-        fontWeight: 600,
-      }}
-    >
-      + Benefits
-    </button>
+          <label
+            style={{
+              display: "block",
+              marginBottom: 8,
+              fontWeight: 600,
+            }}
+          >
+            Upload Image
+          </label>
 
-    <button
-      type="button"
-      onClick={() =>
-        setDescription((prev) =>
-          insertAtCursor(
-            prev,
-            "\nEligibility:\n- \n- \n",
-            descriptionRef.current
-          )
-        )
-      }
-      style={{
-        padding: "8px 12px",
-        borderRadius: 8,
-        border: "1px solid #ddd",
-        background: "#fff",
-        cursor: "pointer",
-        fontWeight: 600,
-      }}
-    >
-      + Eligibility
-    </button>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setImageFile(file);
 
-    <button
-      type="button"
-      onClick={() =>
-        setDescription((prev) =>
-          insertAtCursor(
-            prev,
-            "\nHow to Apply:\n1. \n2. \n3. \n",
-            descriptionRef.current
-          )
-        )
-      }
-      style={{
-        padding: "8px 12px",
-        borderRadius: 8,
-        border: "1px solid #ddd",
-        background: "#fff",
-        cursor: "pointer",
-        fontWeight: 600,
-      }}
-    >
-      + How to Apply
-    </button>
+              if (file) {
+                const localPreview = URL.createObjectURL(file);
+                setImagePreviewUrl(localPreview);
+                setImageUrl("");
+              }
+            }}
+            style={{
+              ...inputStyle,
+              padding: 10,
+              background: "#fff",
+            }}
+          />
 
-    <button
-      type="button"
-      onClick={() =>
-        setDescription((prev) =>
-          insertAtCursor(
-            prev,
-            "\nDeadline:\n- \n",
-            descriptionRef.current
-          )
-        )
-      }
-      style={{
-        padding: "8px 12px",
-        borderRadius: 8,
-        border: "1px solid #ddd",
-        background: "#fff",
-        cursor: "pointer",
-        fontWeight: 600,
-      }}
-    >
-      + Deadline
-    </button>
-  </div>
+          <div style={{ color: "#666", fontSize: 12, marginTop: 6 }}>
+            You can either paste an image URL or upload an image file.
+          </div>
+        </div>
 
-  <textarea
-    ref={descriptionRef}
-    placeholder="Program Description"
-    value={description}
-    onChange={(e) => setDescription(e.target.value)}
-    style={{
-      padding: 12,
-      borderRadius: 8,
-      border: "1px solid #ddd",
-      minHeight: 260,
-      resize: "vertical",
-      width: "100%",
-      lineHeight: 1.6,
-      fontSize: 15,
-    }}
-  />
-  <button
-  type="button"
-  onClick={() => {
-    const textarea = descriptionRef.current;
-    if (!textarea) return;
+        {imagePreviewUrl && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
+              Image Preview
+            </div>
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = description.slice(start, end);
-    const wrapped = `**${selectedText || "bold text"}**`;
+            <img
+              src={imagePreviewUrl}
+              alt="Preview"
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                height: 180,
+                objectFit: "cover",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+              }}
+            />
+          </div>
+        )}
 
-    setDescription((prev) => 
-      prev.slice(0, start) + wrapped + prev.slice(end)
-    );
-  }}
-  style={{
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    background: "#fff",
-    cursor: "pointer",
-    fontWeight: 700,
-  }}
->
-  Bold
-</button>
-</div>
+        <div>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginBottom: 10,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setDescription((prev) =>
+                  insertAtCursor(
+                    prev,
+                    "\nBenefits:\n- \n- \n",
+                    descriptionRef.current
+                  )
+                )
+              }
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Benefits
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setDescription((prev) =>
+                  insertAtCursor(
+                    prev,
+                    "\nEligibility:\n- \n- \n",
+                    descriptionRef.current
+                  )
+                )
+              }
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Eligibility
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setDescription((prev) =>
+                  insertAtCursor(
+                    prev,
+                    "\nHow to Apply:\n1. \n2. \n3. \n",
+                    descriptionRef.current
+                  )
+                )
+              }
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + How to Apply
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setDescription((prev) =>
+                  insertAtCursor(
+                    prev,
+                    "\nDeadline:\n- \n",
+                    descriptionRef.current
+                  )
+                )
+              }
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              + Deadline
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = descriptionRef.current;
+                if (!textarea) return;
+
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = description.slice(start, end);
+                const wrapped = `**${selectedText || "bold text"}**`;
+
+                setDescription((prev) =>
+                  prev.slice(0, start) + wrapped + prev.slice(end)
+                );
+              }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Bold
+            </button>
+          </div>
+
+          <textarea
+            ref={descriptionRef}
+            placeholder="Program Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              minHeight: 260,
+              resize: "vertical",
+              width: "100%",
+              lineHeight: 1.6,
+              fontSize: 15,
+            }}
+          />
+        </div>
 
         <div
           style={{
@@ -1444,7 +1435,7 @@ setImagePreviewUrl(program.image_url || "");
                 checked={featured}
                 onChange={(e) => setFeatured(e.target.checked)}
               />
-              Featured Opportunity
+              ⭐ Featured Opportunity
             </label>
           </div>
         </div>
@@ -1468,12 +1459,12 @@ setImagePreviewUrl(program.image_url || "");
             }}
           >
             {uploadingImage
-  ? "Uploading image..."
-  : loading
-  ? "Saving..."
-  : editingId
-  ? "Update Opportunity"
-  : "Add Opportunity"}
+              ? "Uploading image..."
+              : loading
+              ? "Saving..."
+              : editingId
+              ? "Update Opportunity"
+              : "Add Opportunity"}
           </button>
 
           {editingId && (
