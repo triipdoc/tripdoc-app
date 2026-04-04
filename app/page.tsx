@@ -145,6 +145,45 @@ function formatDeadline(deadline?: string | null) {
   }).format(date);
 }
 
+function getCountryEmoji(country?: string | null) {
+  const value = (country || "").trim().toLowerCase();
+
+  const map: Record<string, string> = {
+    germany: "🇩🇪",
+    canada: "🇨🇦",
+    netherlands: "🇳🇱",
+    australia: "🇦🇺",
+    uk: "🇬🇧",
+    "united kingdom": "🇬🇧",
+    usa: "🇺🇸",
+    "united states": "🇺🇸",
+    ireland: "🇮🇪",
+    france: "🇫🇷",
+    italy: "🇮🇹",
+    spain: "🇪🇸",
+    switzerland: "🇨🇭",
+    belgium: "🇧🇪",
+    austria: "🇦🇹",
+    sweden: "🇸🇪",
+    norway: "🇳🇴",
+    finland: "🇫🇮",
+    denmark: "🇩🇰",
+    japan: "🇯🇵",
+    china: "🇨🇳",
+    singapore: "🇸🇬",
+    malaysia: "🇲🇾",
+    poland: "🇵🇱",
+    romania: "🇷🇴",
+    hungary: "🇭🇺",
+    portugal: "🇵🇹",
+    "new zealand": "🇳🇿",
+    india: "🇮🇳",
+    "south korea": "🇰🇷",
+  };
+
+  return map[value] || "🌍";
+}
+
 function ProgramCard({
   program,
   badge,
@@ -287,6 +326,28 @@ export default async function Home() {
     (p) => p.verification_status === "verified" && isNotExpired(p.deadline)
   );
 
+  const totalVerifiedPrograms = programs.filter(
+    (p) => p.verification_status === "verified"
+  ).length;
+
+  const totalActivePrograms = verifiedActivePrograms.length;
+
+  const uniqueCountries = new Set(
+    programs
+      .map((p) => p.country?.trim())
+      .filter((value): value is string => Boolean(value))
+  ).size;
+
+  const homepageCountries = Array.from(
+    new Set(
+      verifiedActivePrograms
+        .map((p) => p.country?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  )
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, 8);
+
   const { data: clickData } = await supabase
     .from("clicks")
     .select("program_id,title,type,action,created_at")
@@ -402,11 +463,7 @@ export default async function Home() {
   );
 
   const popularPrograms = verifiedActivePrograms
-    .filter(
-      (p) =>
-        !featuredIds.has(p.id) &&
-        !closingSoonIds.has(p.id)
-    )
+    .filter((p) => !featuredIds.has(p.id) && !closingSoonIds.has(p.id))
     .slice(0, 6);
 
   return (
@@ -500,10 +557,10 @@ export default async function Home() {
           }}
         >
           {[
-            "🌍 30+ Countries",
-            "🎓 500+ Opportunities",
-            "✅ Verified Listings",
-            "⚡ Updated Daily",
+            `🌍 ${uniqueCountries}+ Countries`,
+            `🎓 ${totalActivePrograms}+ Active Opportunities`,
+            `✅ ${totalVerifiedPrograms}+ Verified Listings`,
+            "⚡ Updated Regularly",
           ].map((item) => (
             <div
               key={item}
@@ -538,70 +595,70 @@ export default async function Home() {
         </div>
       </div>
 
-      {featuredPrograms.length > 0 && (
+      <div
+        style={{
+          marginTop: 0,
+          marginBottom: 72,
+          border: "1px solid #f3e7b3",
+          borderRadius: 24,
+          padding: "26px 22px 24px",
+          background: "linear-gradient(180deg, #fffaf0 0%, #ffffff 100%)",
+          boxShadow: "0 10px 30px rgba(138,90,0,0.08)",
+        }}
+      >
         <div
           style={{
-            marginTop: 0,
-            marginBottom: 72,
-            border: "1px solid #f3e7b3",
-            borderRadius: 24,
-            padding: "26px 22px 24px",
-            background: "linear-gradient(180deg, #fffaf0 0%, #ffffff 100%)",
-            boxShadow: "0 10px 30px rgba(138,90,0,0.08)",
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 16,
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+            marginBottom: 18,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 16,
-              alignItems: "flex-end",
-              flexWrap: "wrap",
-              marginBottom: 18,
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  display: "inline-block",
-                  marginBottom: 10,
-                  padding: "6px 12px",
-                  borderRadius: 999,
-                  background: "#fff4d6",
-                  color: "#8a5a00",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                ⭐ Editor’s Picks
-              </div>
-
-              <h2 style={{ margin: "0 0 8px 0", fontSize: 30, fontWeight: 800 }}>
-                Featured Opportunities
-              </h2>
-
-              <p style={{ color: "#666", margin: 0, maxWidth: 760, lineHeight: 1.6 }}>
-                Hand-picked opportunities highlighted by TripDoc for faster discovery.
-                These are strong options worth checking first.
-              </p>
-            </div>
-
-            <a
-              href="#all-opportunities"
+          <div>
+            <div
               style={{
-                textDecoration: "none",
-                fontWeight: 700,
+                display: "inline-block",
+                marginBottom: 10,
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: "#fff4d6",
                 color: "#8a5a00",
-                padding: "10px 14px",
-                borderRadius: 10,
-                background: "#fff",
-                border: "1px solid #f3e7b3",
+                fontWeight: 800,
+                fontSize: 13,
               }}
             >
-              Browse all →
-            </a>
+              ⭐ Editor’s Picks
+            </div>
+
+            <h2 style={{ margin: "0 0 8px 0", fontSize: 30, fontWeight: 800 }}>
+              Featured Opportunities
+            </h2>
+
+            <p style={{ color: "#666", margin: 0, maxWidth: 760, lineHeight: 1.6 }}>
+              Hand-picked and priority opportunities selected by TripDoc for faster
+              discovery. These are some of the strongest options worth checking first.
+            </p>
           </div>
 
+          <a
+            href="#all-opportunities"
+            style={{
+              textDecoration: "none",
+              fontWeight: 700,
+              color: "#8a5a00",
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "#fff",
+              border: "1px solid #f3e7b3",
+            }}
+          >
+            Browse all →
+          </a>
+        </div>
+
+        {featuredPrograms.length > 0 ? (
           <HorizontalRow>
             {featuredPrograms.map((p) => (
               <ProgramCard
@@ -617,8 +674,41 @@ export default async function Home() {
               />
             ))}
           </HorizontalRow>
-        </div>
-      )}
+        ) : (
+          <div
+            style={{
+              border: "1px dashed #e6d7a2",
+              borderRadius: 16,
+              padding: "22px 18px",
+              background: "#fffdf7",
+              color: "#6b7280",
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
+              No featured opportunities yet
+            </div>
+            <div style={{ lineHeight: 1.6, marginBottom: 14 }}>
+              Use the admin dashboard to mark strong opportunities as featured, and
+              they will appear here automatically.
+            </div>
+            <a
+              href="#all-opportunities"
+              style={{
+                display: "inline-block",
+                textDecoration: "none",
+                fontWeight: 700,
+                color: "#8a5a00",
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "#fff",
+                border: "1px solid #f3e7b3",
+              }}
+            >
+              Explore all opportunities
+            </a>
+          </div>
+        )}
+      </div>
 
       <div
         style={{
@@ -901,21 +991,29 @@ export default async function Home() {
         </p>
 
         <HorizontalRow>
-          <a href="/country/germany" style={quickCardStyle} className="horizontal-card">
-            🇩🇪 Germany
-          </a>
-
-          <a href="/country/canada" style={quickCardStyle} className="horizontal-card">
-            🇨🇦 Canada
-          </a>
-
-          <a href="/country/netherlands" style={quickCardStyle} className="horizontal-card">
-            🇳🇱 Netherlands
-          </a>
-
-          <a href="/country/australia" style={quickCardStyle} className="horizontal-card">
-            🇦🇺 Australia
-          </a>
+          {homepageCountries.length > 0 ? (
+            homepageCountries.map((country) => (
+              <a
+                key={country}
+                href={`/country/${encodeURIComponent(country.toLowerCase())}`}
+                style={quickCardStyle}
+                className="horizontal-card"
+              >
+                {getCountryEmoji(country)} {country}
+              </a>
+            ))
+          ) : (
+            <div
+              style={{
+                ...quickCardStyle,
+                minWidth: 260,
+                justifyContent: "center",
+                color: "#666",
+              }}
+            >
+              🌍 Countries will appear here automatically
+            </div>
+          )}
         </HorizontalRow>
       </div>
 
