@@ -24,6 +24,18 @@ type ClickRow = {
 
 const PAGE_SIZE = 24;
 
+function safeDateValue(value?: string | null) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function safeFutureDeadlineValue(value?: string | null) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time;
+}
+
 function rankProgramsByClicks(clicks: ClickRow[] = [], actionFilter?: string) {
   const counts = new Map<string, number>();
 
@@ -72,18 +84,70 @@ function orderProgramsByRanking(programs: Program[], ranking: [string, number][]
 
     if (bScore !== aScore) return bScore - aScore;
 
-    const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return bDate - aDate;
+    const aFeatured = a.featured ? 1 : 0;
+    const bFeatured = b.featured ? 1 : 0;
+    if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+
+    return safeDateValue(b.created_at) - safeDateValue(a.created_at);
   });
 
   unrankedPrograms.sort((a, b) => {
-    const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return bDate - aDate;
+    const aFeatured = a.featured ? 1 : 0;
+    const bFeatured = b.featured ? 1 : 0;
+    if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+
+    return safeDateValue(b.created_at) - safeDateValue(a.created_at);
   });
 
   return [...rankedPrograms, ...unrankedPrograms];
+}
+
+function orderProgramsBySort(programs: Program[], sort: string) {
+  const items = [...programs];
+
+  if (sort === "latest") {
+    return items.sort((a, b) => {
+      const aFeatured = a.featured ? 1 : 0;
+      const bFeatured = b.featured ? 1 : 0;
+      if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+
+      return safeDateValue(b.created_at) - safeDateValue(a.created_at);
+    });
+  }
+
+  if (sort === "deadline_asc") {
+    return items.sort((a, b) => {
+      const deadlineDiff =
+        safeFutureDeadlineValue(a.deadline) - safeFutureDeadlineValue(b.deadline);
+
+      if (deadlineDiff !== 0) return deadlineDiff;
+
+      return safeDateValue(b.created_at) - safeDateValue(a.created_at);
+    });
+  }
+
+  if (sort === "deadline_desc") {
+    return items.sort((a, b) => {
+      const aDeadline = safeFutureDeadlineValue(a.deadline);
+      const bDeadline = safeFutureDeadlineValue(b.deadline);
+
+      if (bDeadline !== aDeadline) return bDeadline - aDeadline;
+
+      return safeDateValue(b.created_at) - safeDateValue(a.created_at);
+    });
+  }
+
+  if (sort === "featured") {
+    return items.sort((a, b) => {
+      const aFeatured = a.featured ? 1 : 0;
+      const bFeatured = b.featured ? 1 : 0;
+      if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+
+      return safeDateValue(b.created_at) - safeDateValue(a.created_at);
+    });
+  }
+
+  return items.sort((a, b) => safeDateValue(b.created_at) - safeDateValue(a.created_at));
 }
 
 export default async function ProgramsPage({
@@ -105,7 +169,9 @@ export default async function ProgramsPage({
   const country = params.country?.trim() || "all";
   const funding = params.funding?.trim() || "all";
   const sort = params.sort?.trim() || "latest";
-  const currentPage = Math.max(Number(params.page || "1"), 1);
+
+  const parsedPage = Number(params.page || "1");
+  const currentPage = Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1;
 
   const needsAnalyticsSort = [
     "trending_7d",
@@ -114,18 +180,14 @@ export default async function ProgramsPage({
     "most_shared",
   ].includes(sort);
 
-  if (!needsAnalyticsSort) {
-    const from = (currentPage - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+  const baseSelect =
+    "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,created_at,featured";
 
+  if (!needsAnalyticsSort) {
     let query = supabase
       .from("programs")
-      .select(
-        "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,created_at,featured",
-        { count: "exact" }
-      )
-      .eq("verification_status", "verified")
-      .order("created_at", { ascending: false });
+      .select(baseSelect, { count: "exact" })
+      .eq("verification_status", "verified");
 
     if (q) {
       query = query.or(
@@ -145,17 +207,20 @@ export default async function ProgramsPage({
       query = query.eq("funding_type", funding);
     }
 
-    query = query.range(from, to);
-
     const { data, error, count } = await query;
 
     if (error) {
       console.error("Programs page error:", error.message);
     }
 
-    const programs = (data || []) as Program[];
-    const totalPrograms = count || 0;
+    const allPrograms = orderProgramsBySort((data || []) as Program[], sort);
+    const totalPrograms = count || allPrograms.length;
     const totalPages = Math.max(Math.ceil(totalPrograms / PAGE_SIZE), 1);
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+
+    const from = (safeCurrentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE;
+    const programs = allPrograms.slice(from, to);
 
     return (
       <ProgramsClient
@@ -166,7 +231,7 @@ export default async function ProgramsPage({
         selectedFunding={funding}
         selectedSort={sort}
         showBackLink={true}
-        currentPage={currentPage}
+        currentPage={safeCurrentPage}
         totalPages={totalPages}
         totalPrograms={totalPrograms}
       />
@@ -175,10 +240,7 @@ export default async function ProgramsPage({
 
   let baseQuery = supabase
     .from("programs")
-    .select(
-      "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,created_at,featured",
-      { count: "exact" }
-    )
+    .select(baseSelect, { count: "exact" })
     .eq("verification_status", "verified");
 
   if (q) {
@@ -206,6 +268,7 @@ export default async function ProgramsPage({
   }
 
   const allPrograms = (allProgramsData || []) as Program[];
+  const filteredProgramIds = new Set(allPrograms.map((program) => program.id));
 
   const now = new Date();
   const fromDate = new Date(now);
@@ -227,7 +290,9 @@ export default async function ProgramsPage({
     console.error("Clicks query error:", clicksError.message);
   }
 
-  const clicks = (clicksData || []) as ClickRow[];
+  const clicks = ((clicksData || []) as ClickRow[]).filter(
+    (row) => row.program_id && filteredProgramIds.has(row.program_id)
+  );
 
   let ranking: [string, number][] = [];
 
@@ -243,8 +308,9 @@ export default async function ProgramsPage({
 
   const totalPrograms = count || orderedPrograms.length;
   const totalPages = Math.max(Math.ceil(totalPrograms / PAGE_SIZE), 1);
+  const safeCurrentPage = Math.min(currentPage, totalPages);
 
-  const from = (currentPage - 1) * PAGE_SIZE;
+  const from = (safeCurrentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE;
   const programs = orderedPrograms.slice(from, to);
 
@@ -257,7 +323,7 @@ export default async function ProgramsPage({
       selectedFunding={funding}
       selectedSort={sort}
       showBackLink={true}
-      currentPage={currentPage}
+      currentPage={safeCurrentPage}
       totalPages={totalPages}
       totalPrograms={totalPrograms}
     />

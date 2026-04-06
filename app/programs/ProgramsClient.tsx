@@ -30,6 +30,25 @@ type ProgramsClientProps = {
   selectedSort?: string;
 };
 
+const sortOptions = [
+  { label: "Latest", value: "latest" },
+  { label: "Deadline Soon", value: "deadline_asc" },
+  { label: "Latest Deadline", value: "deadline_desc" },
+  { label: "Featured", value: "featured" },
+  { label: "Trending (7 days)", value: "trending_7d" },
+  { label: "Trending (30 days)", value: "trending_30d" },
+  { label: "Most Applied", value: "most_applied" },
+  { label: "Most Shared", value: "most_shared" },
+];
+
+function toCountrySlug(country: string) {
+  return country.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
+function toTypeSlug(type: string) {
+  return type.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
 function Badge({ status }: { status?: string | null }) {
   const s = (status || "pending").toLowerCase();
   const isVerified = s === "verified";
@@ -157,11 +176,10 @@ function ProgramImage({
       style={{
         width: "100%",
         height: 170,
-fontSize: 13,
-objectFit: "cover",
-borderRadius: 12,
-marginBottom: 14,
-display: "block",
+        objectFit: "cover",
+        borderRadius: 12,
+        marginBottom: 14,
+        display: "block",
       }}
     />
   );
@@ -239,18 +257,8 @@ export default function ProgramsClient({
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    const shouldSortByDeadline = sort === "latest";
-    const sorted = [...initialPrograms];
 
-    if (shouldSortByDeadline) {
-      sorted.sort((a, b) => {
-        const aStatus = getDeadlineStatus(a.deadline).daysLeft ?? 999999;
-        const bStatus = getDeadlineStatus(b.deadline).daysLeft ?? 999999;
-        return aStatus - bStatus;
-      });
-    }
-
-    return sorted.filter((p) => {
+    return initialPrograms.filter((p) => {
       const matchesQuery =
         !query ||
         (p.title || "").toLowerCase().includes(query) ||
@@ -259,17 +267,18 @@ export default function ProgramsClient({
         (p.funding_type || "").toLowerCase().includes(query);
 
       const matchesType =
-        type === "all" || (p.type || "").toLowerCase() === type;
+        type === "all" || (p.type || "").toLowerCase() === type.toLowerCase();
 
       const matchesCountry =
-        country === "all" || (p.country || "") === country;
+        country === "all" || (p.country || "").toLowerCase() === country.toLowerCase();
 
       const matchesFunding =
-        funding === "all" || (p.funding_type || "") === funding;
+        funding === "all" ||
+        (p.funding_type || "").toLowerCase() === funding.toLowerCase();
 
       return matchesQuery && matchesType && matchesCountry && matchesFunding;
     });
-  }, [initialPrograms, q, type, country, funding, sort]);
+  }, [initialPrograms, q, type, country, funding]);
 
   const types = useMemo(() => {
     const set = new Set<string>();
@@ -333,9 +342,11 @@ export default function ProgramsClient({
     if (nextSort === "latest") params.delete("sort");
     else params.set("sort", nextSort);
 
-    params.set("page", nextPage);
+    if (nextPage === "1") params.delete("page");
+    else params.set("page", nextPage);
 
-    router.push(`/programs?${params.toString()}`);
+    const queryString = params.toString();
+    router.push(queryString ? `/programs?${queryString}` : "/programs");
   }
 
   function buildPageLink(page: number) {
@@ -346,10 +357,10 @@ export default function ProgramsClient({
     if (selectedCountry !== "all") params.set("country", selectedCountry);
     if (selectedFunding !== "all") params.set("funding", selectedFunding);
     if (selectedSort !== "latest") params.set("sort", selectedSort);
+    if (page > 1) params.set("page", String(page));
 
-    params.set("page", String(page));
-
-    return `/programs?${params.toString()}`;
+    const queryString = params.toString();
+    return queryString ? `/programs?${queryString}` : "/programs";
   }
 
   return (
@@ -460,11 +471,11 @@ export default function ProgramsClient({
           }}
           style={inputStyle}
         >
-          <option value="latest">Latest</option>
-          <option value="trending_7d">Trending This Week</option>
-          <option value="trending_30d">Trending This Month</option>
-          <option value="most_applied">Most Applied</option>
-          <option value="most_shared">Most Shared</option>
+          {sortOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
 
         <button
@@ -475,7 +486,7 @@ export default function ProgramsClient({
             setCountry("all");
             setFunding("all");
             setSort("latest");
-            router.push("/programs?page=1");
+            router.push("/programs");
           }}
           style={{
             padding: "10px 14px",
@@ -486,7 +497,7 @@ export default function ProgramsClient({
             fontWeight: 600,
           }}
         >
-          Reset
+          Clear Filters
         </button>
 
         <div style={{ color: "#555", fontWeight: 600 }}>
@@ -519,7 +530,7 @@ export default function ProgramsClient({
             }}
           >
             <a
-              href="/programs?page=1"
+              href="/programs"
               style={{
                 padding: "10px 14px",
                 borderRadius: 10,
@@ -534,7 +545,7 @@ export default function ProgramsClient({
             </a>
 
             <a
-              href="/programs?q=Germany&page=1"
+              href="/programs?q=Germany"
               style={{
                 padding: "10px 14px",
                 borderRadius: 10,
@@ -549,7 +560,7 @@ export default function ProgramsClient({
             </a>
 
             <a
-              href="/programs?q=scholarship&page=1"
+              href="/programs?q=scholarship"
               style={{
                 padding: "10px 14px",
                 borderRadius: 10,
@@ -571,7 +582,7 @@ export default function ProgramsClient({
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               gap: 18,
-marginTop: 22,
+              marginTop: 22,
             }}
           >
             {filtered.map((p) => {
@@ -579,21 +590,22 @@ marginTop: 22,
               const isApplyDisabled = !p.official_url;
 
               return (
-               <div
-  key={p.id}
-  style={{
-    display: "block",
-    border: "1px solid #e5e7eb",
-    padding: 18,
-    borderRadius: 16,
-    background: "#ffffff",
-    minWidth: 0,
-    color: "inherit",
-    transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
-    overflow: "hidden",
-  }}
->
+                <div
+                  key={p.id}
+                  style={{
+                    display: "block",
+                    border: "1px solid #e5e7eb",
+                    padding: 18,
+                    borderRadius: 16,
+                    background: "#ffffff",
+                    minWidth: 0,
+                    color: "inherit",
+                    transition:
+                      "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
+                    overflow: "hidden",
+                  }}
+                >
                   <a
                     href={`/programs/${p.slug}`}
                     style={{
@@ -607,71 +619,113 @@ marginTop: 22,
                     <div
                       style={{
                         fontSize: 21,
-fontWeight: 700,
-color: "#111",
-marginBottom: 12,
-lineHeight: 1.35,
-letterSpacing: "-0.2px",
+                        fontWeight: 700,
+                        color: "#111",
+                        marginBottom: 12,
+                        lineHeight: 1.35,
+                        letterSpacing: "-0.2px",
                       }}
                     >
                       {p.title}
                     </div>
-
-                    <div
-  style={{
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginBottom: 8,
-  }}
->
-                      <DeadlineBadge deadline={p.deadline} />
-                      <Badge status={p.verification_status} />
-                    </div>
-
-                    <div
-  style={{
-    marginTop: 10,
-    display: "grid",
-    gap: 8,
-    fontSize: 16,
-    lineHeight: 1.55,
-    color: "#222",
-  }}
->
-                      <div>
-                        <strong>Country:</strong> {p.country || "—"}
-                      </div>
-                      <div>
-                        <strong>Type:</strong> {p.type || "—"}
-                      </div>
-                      <div>
-                        <strong>Funding:</strong> {p.funding_type || "—"}
-                      </div>
-                      <div>
-                        <strong>Deadline:</strong> {p.deadline || "—"}
-                      </div>
-                    </div>
                   </a>
 
                   <div
-  style={{
-    marginTop: 16,
-    display: "grid",
-    gridTemplateColumns: "1.25fr 1fr 1fr",
-    gap: 8,
-    alignItems: "stretch",
-  }}
->
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <DeadlineBadge deadline={p.deadline} />
+                    <Badge status={p.verification_status} />
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "grid",
+                      gap: 8,
+                      fontSize: 16,
+                      lineHeight: 1.55,
+                      color: "#222",
+                    }}
+                  >
+                    <div>
+                      <strong>Country:</strong>{" "}
+                      {p.country ? (
+                        <a
+                          href={`/countries/${toCountrySlug(p.country)}`}
+                          style={{
+                            color: "#0070f3",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {p.country}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </div>
+                    <div>
+                      <strong>Type:</strong>{" "}
+                      {p.type ? (
+                        <a
+                          href={`/types/${toTypeSlug(p.type)}`}
+                          style={{
+                            color: "#0070f3",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {p.type}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </div>
+                    <div>
+  <strong>Funding:</strong>{" "}
+  {p.funding_type ? (
+    <a
+      href={`/funding/${p.funding_type.toLowerCase().trim().replace(/\s+/g, "-")}`}
+      style={{
+        color: "#0070f3",
+        textDecoration: "none",
+        fontWeight: 600,
+      }}
+    >
+      {p.funding_type}
+    </a>
+  ) : (
+    "—"
+  )}
+</div>
+                    <div>
+                      <strong>Deadline:</strong> {p.deadline || "—"}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 16,
+                      display: "grid",
+                      gridTemplateColumns: "1.25fr 1fr 1fr",
+                      gap: 8,
+                      alignItems: "stretch",
+                    }}
+                  >
                     <a
                       href={`/programs/${p.slug}`}
                       style={{
                         ...actionButtonStyle,
                         background: "#111",
-color: "white",
-textDecoration: "none",
-boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                        color: "white",
+                        textDecoration: "none",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                       }}
                     >
                       View Details
@@ -692,10 +746,12 @@ boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                       style={{
                         ...actionButtonStyle,
                         background: isApplyDisabled ? "#a3a3a3" : "#1677ff",
-color: "white",
-border: "none",
-cursor: isApplyDisabled ? "not-allowed" : "pointer",
-boxShadow: isApplyDisabled ? "none" : "0 2px 8px rgba(22,119,255,0.18)",
+                        color: "white",
+                        border: "none",
+                        cursor: isApplyDisabled ? "not-allowed" : "pointer",
+                        boxShadow: isApplyDisabled
+                          ? "none"
+                          : "0 2px 8px rgba(22,119,255,0.18)",
                       }}
                     >
                       Apply Now
@@ -727,9 +783,9 @@ boxShadow: isApplyDisabled ? "none" : "0 2px 8px rgba(22,119,255,0.18)",
                       style={{
                         ...actionButtonStyle,
                         background: "#fff",
-color: "#111",
-border: "1px solid #d9d9d9",
-cursor: "pointer",
+                        color: "#111",
+                        border: "1px solid #d9d9d9",
+                        cursor: "pointer",
                       }}
                     >
                       {copiedProgramId === p.id ? "Copied!" : "Copy Link"}
