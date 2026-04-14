@@ -12,12 +12,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
+*/
 
 * {
   box-sizing: border-box;
@@ -66,8 +68,8 @@ img {
 }
 
 .horizontal-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 14px 28px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
 @keyframes pulse {
@@ -79,3 +81,4 @@ img {
 .skeleton {
   animation: pulse 1.2s ease-in-out infinite;
 }
+

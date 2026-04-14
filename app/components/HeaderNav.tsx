@@ -4,10 +4,10 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "Home" },
-  { href: "/category/scholarship", label: "Scholarships" },
-  { href: "/category/internship", label: "Internships" },
-  { href: "/category/research", label: "Research" },
-  { href: "/category/fellowship", label: "Fellowships" },
+  { href: "/programs", label: "All Opportunities" },
+  { href: "/types/scholarship", label: "Scholarships" },
+  { href: "/types/internship", label: "Internships" },
+  { href: "/types/fellowship", label: "Fellowships" },
 ];
 
 export default function HeaderNav() {
@@ -26,7 +26,7 @@ export default function HeaderNav() {
         const isActive =
           item.href === "/"
             ? pathname === "/"
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            : pathname.startsWith(item.href);
 
         return (
           <a

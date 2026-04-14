@@ -29,19 +29,20 @@ type ClickRow = {
 
 const quickCardStyle = {
   border: "1px solid #e5e7eb",
-  borderRadius: 14,
+  borderRadius: 16,
   padding: "16px 18px",
   textDecoration: "none",
   color: "black",
-  background: "white",
+  background: "#ffffff",
   fontWeight: 700,
   fontSize: 16,
   display: "flex",
   alignItems: "center",
-  minHeight: 60,
-  minWidth: 200,
-  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  justifyContent: "center",
+  minHeight: 64,
+  minWidth: 220,
+  boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+  transition: "all 0.2s ease",
 } as const;
 
 const cardStyle = {
@@ -63,6 +64,18 @@ const featuredCardStyle = {
   boxShadow: "0 8px 24px rgba(138,90,0,0.08)",
   transition: "transform 0.2s ease, box-shadow 0.2s ease",
 } as const;
+
+function toCountrySlug(country: string) {
+  return country.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
+function toTypeSlug(type: string) {
+  return type.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
+function toFundingSlug(funding: string) {
+  return funding.toLowerCase().trim().replace(/\s+/g, "-");
+}
 
 function isNotExpired(deadline?: string | null) {
   if (!deadline) return true;
@@ -348,6 +361,26 @@ export default async function Home() {
     .sort((a, b) => a.localeCompare(b))
     .slice(0, 8);
 
+  const homepageTypes = Array.from(
+    new Set(
+      verifiedActivePrograms
+        .map((p) => p.type?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  )
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, 8);
+
+  const homepageFunding = Array.from(
+    new Set(
+      verifiedActivePrograms
+        .map((p) => p.funding_type?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  )
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, 8);
+
   const { data: clickData } = await supabase
     .from("clicks")
     .select("program_id,title,type,action,created_at")
@@ -509,7 +542,7 @@ export default async function Home() {
           }}
         >
           <a
-            href="/category/scholarship"
+            href="/types/scholarship"
             style={{
               background: "#0070f3",
               color: "white",
@@ -526,7 +559,7 @@ export default async function Home() {
           </a>
 
           <a
-            href="/category/internship"
+            href="/types/internship"
             style={{
               border: "1px solid #ddd",
               padding: "13px 22px",
@@ -592,6 +625,83 @@ export default async function Home() {
           <span>✅ Verified opportunities</span>
           <span>🌍 Global destinations</span>
           <span>🔎 Easy search and filters</span>
+          <span>🚫 No random agent promises</span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 0,
+          marginBottom: 48,
+          border: "1px solid #e5e7eb",
+          borderRadius: 18,
+          padding: "24px 22px",
+          background: "#ffffff",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+        }}
+      >
+        <h2
+          style={{
+            margin: "0 0 10px 0",
+            fontSize: 26,
+            fontWeight: 800,
+          }}
+        >
+          Why Trust TripDoc?
+        </h2>
+
+        <p
+          style={{
+            margin: "0 0 18px 0",
+            color: "#666",
+            maxWidth: 760,
+            lineHeight: 1.6,
+          }}
+        >
+          We focus on verified global opportunities and present them in a simple,
+          searchable format so students and professionals can find real options faster.
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 14,
+          }}
+        >
+          {[
+            {
+              title: "✅ Verified sources",
+              text: "We prioritize opportunities with traceable official links and clear details.",
+            },
+            {
+              title: "🌍 Global opportunities",
+              text: "Scholarships, internships, research and fellowships across multiple countries.",
+            },
+            {
+              title: "⚡ Updated regularly",
+              text: "New programs are added frequently so visitors can keep discovering fresh options.",
+            },
+            {
+              title: "🔎 Easy to search",
+              text: "Use smart search, filters and landing pages to find the right match quickly.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              style={{
+                border: "1px solid #eef0f3",
+                borderRadius: 14,
+                padding: 16,
+                background: "#fafafa",
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 8 }}>{item.title}</div>
+              <div style={{ color: "#555", fontSize: 14, lineHeight: 1.6 }}>
+                {item.text}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -638,7 +748,7 @@ export default async function Home() {
 
             <p style={{ color: "#666", margin: 0, maxWidth: 760, lineHeight: 1.6 }}>
               Hand-picked and priority opportunities selected by TripDoc for faster
-              discovery. These are some of the strongest options worth checking first.
+              discovery.
             </p>
           </div>
 
@@ -708,108 +818,158 @@ export default async function Home() {
             </a>
           </div>
         )}
+
       </div>
 
       <div
         style={{
-          marginTop: 8,
-          marginBottom: 48,
-          border: "1px solid #e5e7eb",
-          borderRadius: 18,
-          padding: "24px 22px",
-          background: "#ffffff",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+          marginTop: 60,
+          paddingBottom: 30,
+          borderBottom: "1px solid #f1f1f1",
         }}
       >
         <h2
           style={{
-            margin: "0 0 10px 0",
-            fontSize: 26,
+            fontSize: 30,
             fontWeight: 800,
+            marginBottom: 6,
           }}
         >
-          Why Trust TripDoc?
+          Browse by Type
         </h2>
 
         <p
           style={{
-            margin: "0 0 18px 0",
             color: "#666",
-            maxWidth: 760,
-            lineHeight: 1.6,
+            marginBottom: 22,
+            fontSize: 16,
           }}
         >
-          We focus on verified global opportunities and present them in a simple,
-          searchable format so students and professionals can find real options faster.
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 14,
-          }}
-        >
-          {[
-            {
-              title: "✅ Verified sources",
-              text: "We prioritize opportunities with traceable official links and clear details.",
-            },
-            {
-              title: "🌍 Global opportunities",
-              text: "Scholarships, internships, research and fellowships across multiple countries.",
-            },
-            {
-              title: "⚡ Updated regularly",
-              text: "New programs are added frequently so visitors can keep discovering fresh options.",
-            },
-            {
-              title: "🔎 Easy to search",
-              text: "Use smart search, filters and category pages to find the right match quickly.",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              style={{
-                border: "1px solid #eef0f3",
-                borderRadius: 14,
-                padding: 16,
-                background: "#fafafa",
-              }}
-            >
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>{item.title}</div>
-              <div style={{ color: "#555", fontSize: 14, lineHeight: 1.6 }}>
-                {item.text}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginTop: 48 }}>
-        <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-          Browse by Category
-        </h2>
-        <p style={{ color: "#666", marginBottom: 20 }}>
           Explore opportunities by category.
         </p>
 
         <HorizontalRow>
-          <a href="/category/scholarship" style={quickCardStyle} className="horizontal-card">
+          <a href="/types/scholarship" style={quickCardStyle} className="horizontal-card">
             🎓 Scholarships
           </a>
 
-          <a href="/category/internship" style={quickCardStyle} className="horizontal-card">
+          <a href="/types/internship" style={quickCardStyle} className="horizontal-card">
             💼 Internships
           </a>
 
-          <a href="/category/research" style={quickCardStyle} className="horizontal-card">
+          <a href="/types/research" style={quickCardStyle} className="horizontal-card">
             🔬 Research
           </a>
 
-          <a href="/category/fellowship" style={quickCardStyle} className="horizontal-card">
+          <a href="/types/fellowship" style={quickCardStyle} className="horizontal-card">
             🌍 Fellowships
           </a>
+        </HorizontalRow>
+      </div>
+
+      <div
+        style={{
+          marginTop: 60,
+          paddingBottom: 30,
+          borderBottom: "1px solid #f1f1f1",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: 30,
+            fontWeight: 800,
+            marginBottom: 6,
+          }}
+        >
+          Browse by Country
+        </h2>
+
+        <p
+          style={{
+            color: "#666",
+            marginBottom: 22,
+            fontSize: 16,
+          }}
+        >
+          Explore opportunities by destination country.
+        </p>
+
+        <HorizontalRow>
+          {homepageCountries.length > 0 ? (
+            homepageCountries.map((country) => (
+              <a
+                key={country}
+                href={`/countries/${toCountrySlug(country)}`}
+                style={quickCardStyle}
+                className="horizontal-card"
+              >
+                {getCountryEmoji(country)} {country}
+              </a>
+            ))
+          ) : (
+            <div
+              style={{
+                ...quickCardStyle,
+                minWidth: 260,
+                color: "#666",
+              }}
+            >
+              🌍 Countries will appear here automatically
+            </div>
+          )}
+        </HorizontalRow>
+      </div>
+
+      <div
+        style={{
+          marginTop: 60,
+          paddingBottom: 30,
+          borderBottom: "1px solid #f1f1f1",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: 30,
+            fontWeight: 800,
+            marginBottom: 6,
+          }}
+        >
+          Browse by Funding
+        </h2>
+
+        <p
+          style={{
+            color: "#666",
+            marginBottom: 22,
+            fontSize: 16,
+          }}
+        >
+          Explore opportunities by funding type.
+        </p>
+
+        <HorizontalRow>
+          {homepageFunding.length > 0 ? (
+            homepageFunding.map((funding) => (
+              <a
+                key={funding}
+                href={`/funding/${toFundingSlug(funding)}`}
+                style={quickCardStyle}
+                className="horizontal-card"
+              >
+                💰 {funding}
+              </a>
+            ))
+          ) : (
+            <div
+              style={{
+                ...quickCardStyle,
+                minWidth: 260,
+                color: "#666",
+              }}
+            >
+              💰 Funding types will appear here automatically
+            </div>
+          )}
         </HorizontalRow>
       </div>
 
@@ -982,41 +1142,6 @@ export default async function Home() {
         </HorizontalRow>
       </div>
 
-      <div style={{ marginTop: 56 }}>
-        <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-          Browse by Country
-        </h2>
-        <p style={{ color: "#666", marginBottom: 20 }}>
-          Explore opportunities by destination country.
-        </p>
-
-        <HorizontalRow>
-          {homepageCountries.length > 0 ? (
-            homepageCountries.map((country) => (
-              <a
-                key={country}
-                href={`/country/${encodeURIComponent(country.toLowerCase())}`}
-                style={quickCardStyle}
-                className="horizontal-card"
-              >
-                {getCountryEmoji(country)} {country}
-              </a>
-            ))
-          ) : (
-            <div
-              style={{
-                ...quickCardStyle,
-                minWidth: 260,
-                justifyContent: "center",
-                color: "#666",
-              }}
-            >
-              🌍 Countries will appear here automatically
-            </div>
-          )}
-        </HorizontalRow>
-      </div>
-
       {newlyAdded.length > 0 && (
         <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
@@ -1033,6 +1158,57 @@ export default async function Home() {
           </HorizontalRow>
         </div>
       )}
+
+      <div
+        style={{
+          marginTop: 72,
+          marginBottom: 20,
+          border: "1px solid #e5e7eb",
+          borderRadius: 20,
+          padding: "28px 24px",
+          background: "linear-gradient(180deg, #f8fbff 0%, #ffffff 100%)",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.04)",
+        }}
+      >
+        <h2 style={{ margin: "0 0 10px 0", fontSize: 28, fontWeight: 800 }}>
+          Ready to explore more?
+        </h2>
+        <p style={{ color: "#666", margin: "0 0 18px 0", lineHeight: 1.6, maxWidth: 760 }}>
+          Use TripDoc to explore verified opportunities by country, type, funding,
+          deadline, and popularity — all in one place.
+        </p>
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <a
+            href="#all-opportunities"
+            style={{
+              background: "#0070f3",
+              color: "white",
+              padding: "12px 18px",
+              borderRadius: 10,
+              textDecoration: "none",
+              fontWeight: 700,
+            }}
+          >
+            Explore All Opportunities
+          </a>
+
+          <a
+            href="/programs"
+            style={{
+              border: "1px solid #ddd",
+              padding: "12px 18px",
+              borderRadius: 10,
+              textDecoration: "none",
+              fontWeight: 700,
+              color: "#333",
+              background: "white",
+            }}
+          >
+            Open Programs Page
+          </a>
+        </div>
+      </div>
 
       <div id="all-opportunities" style={{ marginTop: 88 }}>
         <div style={{ marginBottom: 20 }}>
