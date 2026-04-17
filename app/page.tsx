@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { supabase } from "../lib/supabase";
 import ProgramsClient from "./programs/ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
@@ -299,14 +301,15 @@ function ProgramCard({
   );
 }
 
-const now = new Date();
-const sevenDaysAgo = new Date(now);
-sevenDaysAgo.setDate(now.getDate() - 7);
-
-const thirtyDaysAgo = new Date(now);
-thirtyDaysAgo.setDate(now.getDate() - 30);
-
 export default async function Home() {
+  const now = new Date();
+
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 7);
+
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+
   const { data, error } = await supabase
     .from("programs")
     .select(
@@ -818,7 +821,6 @@ export default async function Home() {
             </a>
           </div>
         )}
-
       </div>
 
       <div
