@@ -420,9 +420,18 @@ export default async function Home() {
   const mostAppliedMap = getMetricMap(mostAppliedRanking);
   const mostSharedMap = getMetricMap(mostSharedRanking);
 
-  const featuredPrograms = verifiedActivePrograms
-    .filter((p) => p.featured)
-    .slice(0, 6);
+  const manuallyFeaturedPrograms = verifiedActivePrograms.filter((p) => p.featured);
+
+const fallbackFeaturedPrograms = [...verifiedActivePrograms].sort((a, b) => {
+  const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+  const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+  return bTime - aTime;
+});
+
+const featuredPrograms =
+  manuallyFeaturedPrograms.length > 0
+    ? manuallyFeaturedPrograms.slice(0, 6)
+    : fallbackFeaturedPrograms.slice(0, 6);
 
   const featuredIds = new Set(featuredPrograms.map((p) => p.id));
 
