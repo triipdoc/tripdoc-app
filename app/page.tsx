@@ -58,21 +58,17 @@ const cardStyle = {
 } as const;
 
 const featuredCardStyle = {
-  border: "1px solid #f3e7b3",
+  border: "1px solid #f1ddbf",
   padding: 18,
   borderRadius: 18,
-  background: "linear-gradient(180deg, #fffdf7 0%, #ffffff 100%)",
+  background: "#ffffff",
   minWidth: 290,
-  boxShadow: "0 8px 24px rgba(138,90,0,0.08)",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
   transition: "transform 0.2s ease, box-shadow 0.2s ease",
 } as const;
 
 function toCountrySlug(country: string) {
   return country.toLowerCase().trim().replace(/\s+/g, "-");
-}
-
-function toTypeSlug(type: string) {
-  return type.toLowerCase().trim().replace(/\s+/g, "-");
 }
 
 function toFundingSlug(funding: string) {
@@ -364,16 +360,6 @@ export default async function Home() {
     .sort((a, b) => a.localeCompare(b))
     .slice(0, 8);
 
-  const homepageTypes = Array.from(
-    new Set(
-      verifiedActivePrograms
-        .map((p) => p.type?.trim())
-        .filter((value): value is string => Boolean(value))
-    )
-  )
-    .sort((a, b) => a.localeCompare(b))
-    .slice(0, 8);
-
   const homepageFunding = Array.from(
     new Set(
       verifiedActivePrograms
@@ -422,16 +408,16 @@ export default async function Home() {
 
   const manuallyFeaturedPrograms = verifiedActivePrograms.filter((p) => p.featured);
 
-const fallbackFeaturedPrograms = [...verifiedActivePrograms].sort((a, b) => {
-  const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-  const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-  return bTime - aTime;
-});
+  const fallbackFeaturedPrograms = [...verifiedActivePrograms].sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return bTime - aTime;
+  });
 
-const featuredPrograms =
-  manuallyFeaturedPrograms.length > 0
-    ? manuallyFeaturedPrograms.slice(0, 6)
-    : fallbackFeaturedPrograms.slice(0, 6);
+  const featuredPrograms =
+    manuallyFeaturedPrograms.length > 0
+      ? manuallyFeaturedPrograms.slice(0, 6)
+      : fallbackFeaturedPrograms.slice(0, 6);
 
   const featuredIds = new Set(featuredPrograms.map((p) => p.id));
 
@@ -512,729 +498,757 @@ const featuredPrograms =
     .slice(0, 6);
 
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 32px 48px" }}>
+    <>
       <div
         style={{
-          marginBottom: 48,
-          padding: "56px 0 32px",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 56,
-            fontWeight: 800,
-            marginBottom: 16,
-            lineHeight: 1.2,
-            letterSpacing: "-0.5px",
-          }}
-        >
-          Discover Verified Global Opportunities Worldwide
-        </h1>
-
-        <p
-          style={{
-            fontSize: 20,
-            color: "#555",
-            maxWidth: 680,
-            marginBottom: 28,
-            lineHeight: 1.55,
-          }}
-        >
-          Scholarships, internships, fellowships, and research programs worldwide —
-          all verified and curated to help you study, travel, and build your career.
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 14,
-            flexWrap: "wrap",
-            marginTop: 8,
-            marginBottom: 24,
-          }}
-        >
-          <a
-            href="/types/scholarship"
-            style={{
-              background: "#0070f3",
-              color: "white",
-              padding: "13px 22px",
-              borderRadius: 10,
-              textDecoration: "none",
-              fontWeight: 700,
-              boxShadow: "0 6px 18px rgba(0,112,243,0.22)",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
-            🎓 Explore Scholarships
-          </a>
-
-          <a
-            href="/types/internship"
-            style={{
-              border: "1px solid #ddd",
-              padding: "13px 22px",
-              borderRadius: 10,
-              textDecoration: "none",
-              fontWeight: 700,
-              color: "#333",
-              background: "white",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
-            💼 Explore Internships
-          </a>
-        </div>
-
-        <div style={{ marginTop: 10, marginBottom: 4 }}>
-          <HeroSearch />
-        </div>
-
-        <div
-          style={{
-            marginTop: 28,
-            display: "flex",
-            gap: 18,
-            flexWrap: "wrap",
-          }}
-        >
-          {[
-            `🌍 ${uniqueCountries}+ Countries`,
-            `🎓 ${totalActivePrograms}+ Active Opportunities`,
-            `✅ ${totalVerifiedPrograms}+ Verified Listings`,
-            "⚡ Updated Regularly",
-          ].map((item) => (
-            <div
-              key={item}
-              style={{
-                border: "1px solid #e5e7eb",
-                padding: "10px 16px",
-                borderRadius: 10,
-                background: "#fafafa",
-                fontWeight: 700,
-                fontSize: 14,
-              }}
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 16,
-            flexWrap: "wrap",
-            marginTop: 20,
-            color: "#555",
-            fontSize: 15,
-            fontWeight: 600,
-          }}
-        >
-          <span>✅ Verified opportunities</span>
-          <span>🌍 Global destinations</span>
-          <span>🔎 Easy search and filters</span>
-          <span>🚫 No random agent promises</span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 0,
-          marginBottom: 48,
-          border: "1px solid #e5e7eb",
-          borderRadius: 18,
-          padding: "24px 22px",
-          background: "#ffffff",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-        }}
-      >
-        <h2
-          style={{
-            margin: "0 0 10px 0",
-            fontSize: 26,
-            fontWeight: 800,
-          }}
-        >
-          Why Trust TripDoc?
-        </h2>
-
-        <p
-          style={{
-            margin: "0 0 18px 0",
-            color: "#666",
-            maxWidth: 760,
-            lineHeight: 1.6,
-          }}
-        >
-          We focus on verified global opportunities and present them in a simple,
-          searchable format so students and professionals can find real options faster.
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 14,
-          }}
-        >
-          {[
-            {
-              title: "✅ Verified sources",
-              text: "We prioritize opportunities with traceable official links and clear details.",
-            },
-            {
-              title: "🌍 Global opportunities",
-              text: "Scholarships, internships, research and fellowships across multiple countries.",
-            },
-            {
-              title: "⚡ Updated regularly",
-              text: "New programs are added frequently so visitors can keep discovering fresh options.",
-            },
-            {
-              title: "🔎 Easy to search",
-              text: "Use smart search, filters and landing pages to find the right match quickly.",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              style={{
-                border: "1px solid #eef0f3",
-                borderRadius: 14,
-                padding: 16,
-                background: "#fafafa",
-              }}
-            >
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>{item.title}</div>
-              <div style={{ color: "#555", fontSize: 14, lineHeight: 1.6 }}>
-                {item.text}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 0,
-          marginBottom: 72,
-          border: "1px solid #f3e7b3",
-          borderRadius: 24,
-          padding: "26px 22px 24px",
-          background: "linear-gradient(180deg, #fffaf0 0%, #ffffff 100%)",
-          boxShadow: "0 10px 30px rgba(138,90,0,0.08)",
+          width: "100%",
+          background: "linear-gradient(135deg, #17307a 0%, #2952d5 100%)",
+          marginBottom: 0,
+          paddingTop: 24,
+          paddingBottom: 30,
         }}
       >
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 16,
-            alignItems: "flex-end",
-            flexWrap: "wrap",
-            marginBottom: 18,
+            maxWidth: 1100,
+            margin: "0 auto",
+            padding: "0 20px",
+            textAlign: "center",
+            color: "white",
           }}
         >
-          <div>
-            <div
-              style={{
-                display: "inline-block",
-                marginBottom: 10,
-                padding: "6px 12px",
-                borderRadius: 999,
-                background: "#fff4d6",
-                color: "#8a5a00",
-                fontWeight: 800,
-                fontSize: 13,
-              }}
-            >
-              ⭐ Editor’s Picks
-            </div>
-
-            <h2 style={{ margin: "0 0 8px 0", fontSize: 30, fontWeight: 800 }}>
-              Featured Opportunities
-            </h2>
-
-            <p style={{ color: "#666", margin: 0, maxWidth: 760, lineHeight: 1.6 }}>
-              Hand-picked and priority opportunities selected by TripDoc for faster
-              discovery.
-            </p>
-          </div>
-
-          <a
-            href="#all-opportunities"
+          <h1
             style={{
-              textDecoration: "none",
-              fontWeight: 700,
-              color: "#8a5a00",
-              padding: "10px 14px",
-              borderRadius: 10,
-              background: "#fff",
-              border: "1px solid #f3e7b3",
+              fontSize: "clamp(34px, 5vw, 58px)" as any,
+              fontWeight: 800,
+              margin: "0 auto 14px",
+              lineHeight: 1.08,
+              maxWidth: 900,
+              letterSpacing: "-0.02em",
             }}
           >
-            Browse all →
-          </a>
-        </div>
+            Discover Verified Global Opportunities
+          </h1>
 
-        {featuredPrograms.length > 0 ? (
-          <HorizontalRow>
-            {featuredPrograms.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                featured
-                badge="⭐ Featured"
-                badgeStyle={{
-                  background: "#fff4d6",
-                  color: "#8a5a00",
-                }}
-                meta={`${p.country || "—"} • ${p.funding_type || "—"}`}
-              />
-            ))}
-          </HorizontalRow>
-        ) : (
+          <p
+            style={{
+              fontSize: 18,
+              color: "rgba(255,255,255,0.92)",
+              maxWidth: 760,
+              margin: "0 auto 22px",
+              lineHeight: 1.55,
+              fontWeight: 500,
+            }}
+          >
+            Scholarships, internships, fellowships, and research programs —
+            all verified with official links to help you apply with confidence.
+          </p>
+
           <div
             style={{
-              border: "1px dashed #e6d7a2",
-              borderRadius: 16,
-              padding: "22px 18px",
-              background: "#fffdf7",
-              color: "#6b7280",
+              display: "flex",
+              gap: 14,
+              justifyContent: "center",
+              flexWrap: "wrap",
+              marginBottom: 28,
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
-              No featured opportunities yet
+            <a
+              href="/types/scholarship"
+              style={{
+                background: "#ffffff",
+                color: "#2952d5",
+                padding: "14px 24px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: 220,
+                border: "1px solid rgba(255,255,255,0.2)",
+                boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+              }}
+            >
+              🎓 Explore Scholarships
+            </a>
+
+            <a
+              href="/types/internship"
+              style={{
+                border: "1px solid rgba(255,255,255,0.65)",
+                padding: "14px 24px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 700,
+                color: "white",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: 220,
+                background: "rgba(255,255,255,0.04)",
+              }}
+            >
+              💼 Explore Internships
+            </a>
+          </div>
+
+          <div style={{ maxWidth: 760, margin: "0 auto 24px" }}>
+            <HeroSearch />
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              flexWrap: "wrap",
+              justifyContent: "center",
+              marginTop: 14,
+              marginBottom: 18,
+            }}
+          >
+            {[
+              `🌍 ${uniqueCountries}+ Countries`,
+              `🎓 ${totalActivePrograms}+ Active Opportunities`,
+              `✅ ${totalVerifiedPrograms}+ Verified Listings`,
+              "⚡ Updated Regularly",
+            ].map((item) => (
+              <div
+                key={item}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.08)",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: "#ffffff",
+                  minWidth: 210,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                }}
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 28,
+              flexWrap: "wrap",
+              justifyContent: "center",
+              marginTop: 8,
+              color: "rgba(255,255,255,0.95)",
+              fontSize: 15,
+              fontWeight: 600,
+              paddingBottom: 8,
+            }}
+          >
+            <span>✅ Verified from official sources</span>
+            <span>🌍 Global opportunities</span>
+            <span>🔎 Easy search and filters</span>
+            <span>🚫 No agents, no hidden fees</span>
+          </div>
+        </div>
+      </div>
+
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px 48px" }}>
+        <div
+          style={{
+            marginTop: 0,
+            marginBottom: 22,
+            border: "1px solid #e5e7eb",
+            borderRadius: 18,
+            padding: "22px 22px 16px",
+            background: "#ffffff",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          }}
+        >
+          <h2
+            style={{
+              margin: "0 0 10px 0",
+              fontSize: 26,
+              fontWeight: 800,
+            }}
+          >
+            Why Trust TripDoc?
+          </h2>
+
+          <p
+            style={{
+              margin: "0 0 18px 0",
+              color: "#666",
+              maxWidth: 760,
+              lineHeight: 1.6,
+            }}
+          >
+            We focus on verified global opportunities and present them in a simple,
+            searchable format so students and professionals can find real options faster.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 14,
+            }}
+          >
+            {[
+              {
+                title: "✅ Verified sources",
+                text: "We prioritize opportunities with traceable official links and clear details.",
+              },
+              {
+                title: "🌍 Global opportunities",
+                text: "Scholarships, internships, research and fellowships across multiple countries.",
+              },
+              {
+                title: "⚡ Updated regularly",
+                text: "New programs are added frequently so visitors can keep discovering fresh options.",
+              },
+              {
+                title: "🔎 Easy to search",
+                text: "Use smart search, filters and landing pages to find the right match quickly.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                style={{
+                  border: "1px solid #edf0f4",
+                  borderRadius: 14,
+                  padding: 16,
+                  background: "#f8fafc",
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>{item.title}</div>
+                <div style={{ color: "#555", fontSize: 14, lineHeight: 1.6 }}>
+                  {item.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 0,
+            marginBottom: 28,
+            border: "1px solid #f1ddbf",
+            borderRadius: 20,
+            padding: "18px 16px 20px",
+            background: "#fffdf9",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 16,
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              marginBottom: 18,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  display: "inline-block",
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "#fff1cc",
+                  color: "#c77800",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                ⭐ Editor’s Picks
+              </div>
+
+              <h2 style={{ margin: "0 0 8px 0", fontSize: 30, fontWeight: 800 }}>
+                Featured Opportunities
+              </h2>
+
+              <p style={{ color: "#666", margin: 0, maxWidth: 760, lineHeight: 1.6 }}>
+                Hand-picked and priority opportunities selected by TripDoc for faster
+                discovery.
+              </p>
             </div>
-            <div style={{ lineHeight: 1.6, marginBottom: 14 }}>
-              Use the admin dashboard to mark strong opportunities as featured, and
-              they will appear here automatically.
-            </div>
+
             <a
               href="#all-opportunities"
               style={{
-                display: "inline-block",
                 textDecoration: "none",
                 fontWeight: 700,
-                color: "#8a5a00",
+                color: "#c77800",
                 padding: "10px 14px",
                 borderRadius: 10,
                 background: "#fff",
-                border: "1px solid #f3e7b3",
+                border: "1px solid #f1ddbf",
               }}
             >
-              Explore all opportunities
+              Browse all →
             </a>
           </div>
-        )}
-      </div>
 
-      <div
-        style={{
-          marginTop: 60,
-          paddingBottom: 30,
-          borderBottom: "1px solid #f1f1f1",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 30,
-            fontWeight: 800,
-            marginBottom: 6,
-          }}
-        >
-          Browse by Type
-        </h2>
-
-        <p
-          style={{
-            color: "#666",
-            marginBottom: 22,
-            fontSize: 16,
-          }}
-        >
-          Explore opportunities by category.
-        </p>
-
-        <HorizontalRow>
-          <a href="/types/scholarship" style={quickCardStyle} className="horizontal-card">
-            🎓 Scholarships
-          </a>
-
-          <a href="/types/internship" style={quickCardStyle} className="horizontal-card">
-            💼 Internships
-          </a>
-
-          <a href="/types/research" style={quickCardStyle} className="horizontal-card">
-            🔬 Research
-          </a>
-
-          <a href="/types/fellowship" style={quickCardStyle} className="horizontal-card">
-            🌍 Fellowships
-          </a>
-        </HorizontalRow>
-      </div>
-
-      <div
-        style={{
-          marginTop: 60,
-          paddingBottom: 30,
-          borderBottom: "1px solid #f1f1f1",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 30,
-            fontWeight: 800,
-            marginBottom: 6,
-          }}
-        >
-          Browse by Country
-        </h2>
-
-        <p
-          style={{
-            color: "#666",
-            marginBottom: 22,
-            fontSize: 16,
-          }}
-        >
-          Explore opportunities by destination country.
-        </p>
-
-        <HorizontalRow>
-          {homepageCountries.length > 0 ? (
-            homepageCountries.map((country) => (
-              <a
-                key={country}
-                href={`/countries/${toCountrySlug(country)}`}
-                style={quickCardStyle}
-                className="horizontal-card"
-              >
-                {getCountryEmoji(country)} {country}
-              </a>
-            ))
+          {featuredPrograms.length > 0 ? (
+            <HorizontalRow>
+              {featuredPrograms.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  featured
+                  badge="⭐ Featured"
+                  badgeStyle={{
+                    background: "#fff1cc",
+                    color: "#c77800",
+                  }}
+                  meta={`${p.country || "—"} • ${p.funding_type || "—"}`}
+                />
+              ))}
+            </HorizontalRow>
           ) : (
             <div
               style={{
-                ...quickCardStyle,
-                minWidth: 260,
-                color: "#666",
+                border: "1px dashed #e6d7a2",
+                borderRadius: 16,
+                padding: "22px 18px",
+                background: "#fffdf7",
+                color: "#6b7280",
               }}
             >
-              🌍 Countries will appear here automatically
-            </div>
-          )}
-        </HorizontalRow>
-      </div>
-
-      <div
-        style={{
-          marginTop: 60,
-          paddingBottom: 30,
-          borderBottom: "1px solid #f1f1f1",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 30,
-            fontWeight: 800,
-            marginBottom: 6,
-          }}
-        >
-          Browse by Funding
-        </h2>
-
-        <p
-          style={{
-            color: "#666",
-            marginBottom: 22,
-            fontSize: 16,
-          }}
-        >
-          Explore opportunities by funding type.
-        </p>
-
-        <HorizontalRow>
-          {homepageFunding.length > 0 ? (
-            homepageFunding.map((funding) => (
+              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
+                No featured opportunities yet
+              </div>
+              <div style={{ lineHeight: 1.6, marginBottom: 14 }}>
+                Use the admin dashboard to mark strong opportunities as featured, and
+                they will appear here automatically.
+              </div>
               <a
-                key={funding}
-                href={`/funding/${toFundingSlug(funding)}`}
-                style={quickCardStyle}
-                className="horizontal-card"
+                href="#all-opportunities"
+                style={{
+                  display: "inline-block",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  color: "#8a5a00",
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  background: "#fff",
+                  border: "1px solid #f3e7b3",
+                }}
               >
-                💰 {funding}
+                Explore all opportunities
               </a>
-            ))
-          ) : (
-            <div
-              style={{
-                ...quickCardStyle,
-                minWidth: 260,
-                color: "#666",
-              }}
-            >
-              💰 Funding types will appear here automatically
             </div>
           )}
-        </HorizontalRow>
-      </div>
+        </div>
 
-      <div style={{ marginTop: 56 }}>
-        <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-          🔥 Closing Soon
-        </h2>
-        <p style={{ color: "#666", marginBottom: 20 }}>
-          Opportunities with deadlines approaching within the next 7 days.
-        </p>
+        <div
+          style={{
+            marginTop: 60,
+            paddingBottom: 30,
+            borderBottom: "1px solid #f1f1f1",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              marginBottom: 6,
+            }}
+          >
+            Browse by Type
+          </h2>
 
-        {closingSoon.length === 0 ? (
-          <p>No urgent deadlines right now.</p>
-        ) : (
+          <p
+            style={{
+              color: "#666",
+              marginBottom: 22,
+              fontSize: 16,
+            }}
+          >
+            Explore opportunities by type.
+          </p>
+
           <HorizontalRow>
-            {closingSoon.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge="⏰ Closing Soon"
-                badgeStyle={{
-                  background: "#fff1db",
-                  color: "#a05a00",
-                }}
-                meta={`Deadline: ${formatDeadline(p.deadline)}`}
-              />
-            ))}
+            <a href="/types/scholarship" style={quickCardStyle} className="horizontal-card">
+              🎓 Scholarships
+            </a>
+
+            <a href="/types/internship" style={quickCardStyle} className="horizontal-card">
+              💼 Internships
+            </a>
+
+            <a href="/types/research" style={quickCardStyle} className="horizontal-card">
+              🔬 Research
+            </a>
+
+            <a href="/types/fellowship" style={quickCardStyle} className="horizontal-card">
+              🌍 Fellowships
+            </a>
           </HorizontalRow>
+        </div>
+
+        <div
+          style={{
+            marginTop: 60,
+            paddingBottom: 30,
+            borderBottom: "1px solid #f1f1f1",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              marginBottom: 6,
+            }}
+          >
+            Browse by Country
+          </h2>
+
+          <p
+            style={{
+              color: "#666",
+              marginBottom: 22,
+              fontSize: 16,
+            }}
+          >
+            Explore opportunities by destination country.
+          </p>
+
+          <HorizontalRow>
+            {homepageCountries.length > 0 ? (
+              homepageCountries.map((country) => (
+                <a
+                  key={country}
+                  href={`/countries/${toCountrySlug(country)}`}
+                  style={quickCardStyle}
+                  className="horizontal-card"
+                >
+                  {getCountryEmoji(country)} {country}
+                </a>
+              ))
+            ) : (
+              <div
+                style={{
+                  ...quickCardStyle,
+                  minWidth: 260,
+                  color: "#666",
+                }}
+              >
+                🌍 Countries will appear here automatically
+              </div>
+            )}
+          </HorizontalRow>
+        </div>
+
+        <div
+          style={{
+            marginTop: 60,
+            paddingBottom: 30,
+            borderBottom: "1px solid #f1f1f1",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              marginBottom: 6,
+            }}
+          >
+            Browse by Funding
+          </h2>
+
+          <p
+            style={{
+              color: "#666",
+              marginBottom: 22,
+              fontSize: 16,
+            }}
+          >
+            Explore opportunities by funding type.
+          </p>
+
+          <HorizontalRow>
+            {homepageFunding.length > 0 ? (
+              homepageFunding.map((funding) => (
+                <a
+                  key={funding}
+                  href={`/funding/${toFundingSlug(funding)}`}
+                  style={quickCardStyle}
+                  className="horizontal-card"
+                >
+                  💰 {funding}
+                </a>
+              ))
+            ) : (
+              <div
+                style={{
+                  ...quickCardStyle,
+                  minWidth: 260,
+                  color: "#666",
+                }}
+              >
+                💰 Funding types will appear here automatically
+              </div>
+            )}
+          </HorizontalRow>
+        </div>
+
+        <div style={{ marginTop: 56 }}>
+          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+            🔥 Closing Soon
+          </h2>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Opportunities with deadlines approaching within the next 7 days.
+          </p>
+
+          {closingSoon.length === 0 ? (
+            <p>No urgent deadlines right now.</p>
+          ) : (
+            <HorizontalRow>
+              {closingSoon.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  badge="⏰ Closing Soon"
+                  badgeStyle={{
+                    background: "#fff1db",
+                    color: "#a05a00",
+                  }}
+                  meta={`Deadline: ${formatDeadline(p.deadline)}`}
+                />
+              ))}
+            </HorizontalRow>
+          )}
+        </div>
+
+        {trendingFromClicks.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+              📈 Trending by Users
+            </h2>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Opportunities getting the most interest from recent visitors on TripDoc.
+            </p>
+
+            <HorizontalRow>
+              {trendingFromClicks.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  badge={`🔥 ${clickCountMap.get(p.id) || 0} clicks`}
+                  badgeStyle={{
+                    background: "#eef4ff",
+                    color: "#1d4ed8",
+                  }}
+                />
+              ))}
+            </HorizontalRow>
+          </div>
         )}
-      </div>
 
-      {trendingFromClicks.length > 0 && (
+        {trendingThisWeek.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+              📊 Trending This Week
+            </h2>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Opportunities with the strongest user activity in the last 7 days.
+            </p>
+
+            <HorizontalRow>
+              {trendingThisWeek.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  badge={`⚡ Score ${trending7dMap.get(p.id) || 0}`}
+                  badgeStyle={{
+                    background: "#ecfeff",
+                    color: "#0f766e",
+                  }}
+                />
+              ))}
+            </HorizontalRow>
+          </div>
+        )}
+
+        {trendingThisMonth.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+              🗓️ Trending This Month
+            </h2>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Opportunities that kept attracting attention in the last 30 days.
+            </p>
+
+            <HorizontalRow>
+              {trendingThisMonth.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  badge={`📈 Score ${trending30dMap.get(p.id) || 0}`}
+                  badgeStyle={{
+                    background: "#f3f0ff",
+                    color: "#6d28d9",
+                  }}
+                />
+              ))}
+            </HorizontalRow>
+          </div>
+        )}
+
+        {mostApplied.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+              📝 Most Applied
+            </h2>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Opportunities users clicked Apply Now on the most in the last 7 days.
+            </p>
+
+            <HorizontalRow>
+              {mostApplied.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  badge={`🚀 ${mostAppliedMap.get(p.id) || 0} apply clicks`}
+                  badgeStyle={{
+                    background: "#effdf5",
+                    color: "#15803d",
+                  }}
+                />
+              ))}
+            </HorizontalRow>
+          </div>
+        )}
+
+        {mostShared.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+              🔗 Most Shared
+            </h2>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Opportunities users copied and shared the most in the last 7 days.
+            </p>
+
+            <HorizontalRow>
+              {mostShared.map((p) => (
+                <ProgramCard
+                  key={p.id}
+                  program={p}
+                  badge={`📎 ${mostSharedMap.get(p.id) || 0} shares`}
+                  badgeStyle={{
+                    background: "#fff7ed",
+                    color: "#c2410c",
+                  }}
+                />
+              ))}
+            </HorizontalRow>
+          </div>
+        )}
+
         <div style={{ marginTop: 56 }}>
           <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            📈 Trending by Users
+            🔥 Popular Opportunities
           </h2>
+
           <p style={{ color: "#666", marginBottom: 20 }}>
-            Opportunities getting the most interest from recent visitors on TripDoc.
+            Verified programs many students are currently exploring.
           </p>
 
           <HorizontalRow>
-            {trendingFromClicks.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge={`🔥 ${clickCountMap.get(p.id) || 0} clicks`}
-                badgeStyle={{
-                  background: "#eef4ff",
-                  color: "#1d4ed8",
-                }}
-              />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      {trendingThisWeek.length > 0 && (
-        <div style={{ marginTop: 56 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            📊 Trending This Week
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Opportunities with the strongest user activity in the last 7 days.
-          </p>
-
-          <HorizontalRow>
-            {trendingThisWeek.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge={`⚡ Score ${trending7dMap.get(p.id) || 0}`}
-                badgeStyle={{
-                  background: "#ecfeff",
-                  color: "#0f766e",
-                }}
-              />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      {trendingThisMonth.length > 0 && (
-        <div style={{ marginTop: 56 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            🗓️ Trending This Month
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Opportunities that kept attracting attention in the last 30 days.
-          </p>
-
-          <HorizontalRow>
-            {trendingThisMonth.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge={`📈 Score ${trending30dMap.get(p.id) || 0}`}
-                badgeStyle={{
-                  background: "#f3f0ff",
-                  color: "#6d28d9",
-                }}
-              />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      {mostApplied.length > 0 && (
-        <div style={{ marginTop: 56 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            📝 Most Applied
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Opportunities users clicked Apply Now on the most in the last 7 days.
-          </p>
-
-          <HorizontalRow>
-            {mostApplied.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge={`🚀 ${mostAppliedMap.get(p.id) || 0} apply clicks`}
-                badgeStyle={{
-                  background: "#effdf5",
-                  color: "#15803d",
-                }}
-              />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      {mostShared.length > 0 && (
-        <div style={{ marginTop: 56 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            🔗 Most Shared
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Opportunities users copied and shared the most in the last 7 days.
-          </p>
-
-          <HorizontalRow>
-            {mostShared.map((p) => (
-              <ProgramCard
-                key={p.id}
-                program={p}
-                badge={`📎 ${mostSharedMap.get(p.id) || 0} shares`}
-                badgeStyle={{
-                  background: "#fff7ed",
-                  color: "#c2410c",
-                }}
-              />
-            ))}
-          </HorizontalRow>
-        </div>
-      )}
-
-      <div style={{ marginTop: 56 }}>
-        <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-          🔥 Popular Opportunities
-        </h2>
-
-        <p style={{ color: "#666", marginBottom: 20 }}>
-          Verified programs many students are currently exploring.
-        </p>
-
-        <HorizontalRow>
-          {popularPrograms.map((p) => (
-            <ProgramCard key={p.id} program={p} />
-          ))}
-        </HorizontalRow>
-      </div>
-
-      {newlyAdded.length > 0 && (
-        <div style={{ marginTop: 56 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
-            🆕 Newly Added Opportunities
-          </h2>
-          <p style={{ color: "#666", marginBottom: 20 }}>
-            Recently added verified programs on TripDoc.
-          </p>
-
-          <HorizontalRow>
-            {newlyAdded.map((p) => (
+            {popularPrograms.map((p) => (
               <ProgramCard key={p.id} program={p} />
             ))}
           </HorizontalRow>
         </div>
-      )}
 
-      <div
-        style={{
-          marginTop: 72,
-          marginBottom: 20,
-          border: "1px solid #e5e7eb",
-          borderRadius: 20,
-          padding: "28px 24px",
-          background: "linear-gradient(180deg, #f8fbff 0%, #ffffff 100%)",
-          boxShadow: "0 6px 20px rgba(0,0,0,0.04)",
-        }}
-      >
-        <h2 style={{ margin: "0 0 10px 0", fontSize: 28, fontWeight: 800 }}>
-          Ready to explore more?
-        </h2>
-        <p style={{ color: "#666", margin: "0 0 18px 0", lineHeight: 1.6, maxWidth: 760 }}>
-          Use TripDoc to explore verified opportunities by country, type, funding,
-          deadline, and popularity — all in one place.
-        </p>
+        {newlyAdded.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 28, fontWeight: 700 }}>
+              🆕 Newly Added Opportunities
+            </h2>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Recently added verified programs on TripDoc.
+            </p>
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <a
-            href="#all-opportunities"
-            style={{
-              background: "#0070f3",
-              color: "white",
-              padding: "12px 18px",
-              borderRadius: 10,
-              textDecoration: "none",
-              fontWeight: 700,
-            }}
-          >
-            Explore All Opportunities
-          </a>
+            <HorizontalRow>
+              {newlyAdded.map((p) => (
+                <ProgramCard key={p.id} program={p} />
+              ))}
+            </HorizontalRow>
+          </div>
+        )}
 
-          <a
-            href="/programs"
-            style={{
-              border: "1px solid #ddd",
-              padding: "12px 18px",
-              borderRadius: 10,
-              textDecoration: "none",
-              fontWeight: 700,
-              color: "#333",
-              background: "white",
-            }}
-          >
-            Open Programs Page
-          </a>
-        </div>
-      </div>
-
-      <div id="all-opportunities" style={{ marginTop: 88 }}>
-        <div style={{ marginBottom: 20 }}>
-          <h2 style={{ marginBottom: 10, fontSize: 30, fontWeight: 800 }}>
-            Explore All Opportunities
+        <div
+          style={{
+            marginTop: 72,
+            marginBottom: 20,
+            border: "1px solid #e5e7eb",
+            borderRadius: 20,
+            padding: "28px 24px",
+            background: "linear-gradient(180deg, #f8fbff 0%, #ffffff 100%)",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.04)",
+          }}
+        >
+          <h2 style={{ margin: "0 0 10px 0", fontSize: 28, fontWeight: 800 }}>
+            Ready to explore more?
           </h2>
-
-          <p style={{ color: "#666", margin: 0, maxWidth: 760, fontSize: 17 }}>
-            Search and filter verified scholarships, internships, fellowships, and
-            research programs from around the world.
+          <p style={{ color: "#666", margin: "0 0 18px 0", lineHeight: 1.6, maxWidth: 760 }}>
+            Use TripDoc to explore verified opportunities by country, type, funding,
+            deadline, and popularity — all in one place.
           </p>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <a
+              href="#all-opportunities"
+              style={{
+                background: "#0070f3",
+                color: "white",
+                padding: "12px 18px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 700,
+              }}
+            >
+              Explore All Opportunities
+            </a>
+
+            <a
+              href="/programs"
+              style={{
+                border: "1px solid #ddd",
+                padding: "12px 18px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 700,
+                color: "#333",
+                background: "white",
+              }}
+            >
+              Open Programs Page
+            </a>
+          </div>
         </div>
 
-        <ProgramsClient initialPrograms={programs} />
-      </div>
-    </main>
+        <div id="all-opportunities" style={{ marginTop: 88 }}>
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ marginBottom: 10, fontSize: 30, fontWeight: 800 }}>
+              Explore All Opportunities
+            </h2>
+
+            <p style={{ color: "#666", margin: 0, maxWidth: 760, fontSize: 17 }}>
+              Search and filter verified scholarships, internships, fellowships, and
+              research programs from around the world.
+            </p>
+          </div>
+
+          <ProgramsClient initialPrograms={programs} />
+        </div>
+      </main>
+    </>
   );
 }
