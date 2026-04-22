@@ -234,7 +234,6 @@ export default function HeroSearch() {
 
     return {
       ...dropdownItemStyle,
-      width: "100%",
       background: isActive ? "#f3f4f6" : "transparent",
     };
   }
@@ -245,7 +244,7 @@ export default function HeroSearch() {
       style={{
         width: "100%",
         maxWidth: 880,
-        margin: "0",
+        margin: "0 auto",
         position: "relative",
       }}
     >
@@ -254,22 +253,24 @@ export default function HeroSearch() {
           style={{
             display: "flex",
             alignItems: "center",
-            background: "#fff",
-            border: focused ? "1px solid #2563eb" : "1px solid #e5e7eb",
-            borderRadius: 999,
+            gap: 8,
+            background: "#ffffff",
+            border: focused ? "1px solid #93c5fd" : "1px solid rgba(255,255,255,0.35)",
+            borderRadius: 8,
             boxShadow: focused
-              ? "0 8px 30px rgba(37,99,235,0.15)"
-              : "0 2px 10px rgba(0,0,0,0.06)",
-            padding: "0 16px",
-            minHeight: 60,
-            transition: "all 0.25s ease",
+              ? "0 10px 28px rgba(37,99,235,0.16)"
+              : "0 6px 18px rgba(0,0,0,0.10)",
+            padding: "4px 5px 4px 12px",
+            minHeight: 54,
+            transition: "all 0.2s ease",
           }}
         >
           <span
             style={{
-              fontSize: 18,
-              marginRight: 10,
-              opacity: 0.6,
+              fontSize: 17,
+              opacity: 0.5,
+              flexShrink: 0,
+              lineHeight: 1,
             }}
           >
             🔍
@@ -281,14 +282,16 @@ export default function HeroSearch() {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setFocused(true)}
             onKeyDown={handleKeyDown}
-            placeholder="Search scholarships, jobs, or countries..."
+            placeholder="Search programs, scholarships, universities, or keywords..."
             style={{
               flex: 1,
               border: "none",
               outline: "none",
-              fontSize: 16,
-              padding: "18px 0",
+              fontSize: 14,
+              padding: "8px 0",
               background: "transparent",
+              color: "#111827",
+              minWidth: 0,
             }}
           />
 
@@ -305,9 +308,10 @@ export default function HeroSearch() {
                 border: "none",
                 background: "transparent",
                 cursor: "pointer",
-                fontSize: 18,
-                opacity: 0.6,
-                marginRight: 8,
+                fontSize: 15,
+                opacity: 0.5,
+                padding: "4px 6px",
+                flexShrink: 0,
               }}
             >
               ✕
@@ -320,10 +324,14 @@ export default function HeroSearch() {
               border: "none",
               background: "#2563eb",
               color: "#fff",
-              padding: "10px 20px",
-              borderRadius: 999,
-              fontWeight: 600,
+              padding: "10px 16px",
+              borderRadius: 7,
+              fontWeight: 700,
+              fontSize: 14,
               cursor: "pointer",
+              flexShrink: 0,
+              minWidth: 86,
+              boxShadow: "0 4px 12px rgba(37,99,235,0.18)",
             }}
           >
             Search
@@ -340,141 +348,173 @@ export default function HeroSearch() {
             right: 0,
             background: "#fff",
             border: "1px solid #e5e7eb",
-            borderRadius: 20,
-            boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
+            borderRadius: 14,
+            boxShadow: "0 20px 40px rgba(0,0,0,0.14)",
             zIndex: 50,
             overflow: "hidden",
           }}
         >
-          {isEmpty ? (
-            <div style={{ padding: 16 }}>
-              {emptyStateItems.recent.length > 0 && (
-                <div style={{ marginBottom: 18 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <h4
-                      style={{
-                        margin: 0,
-                        fontSize: 13,
-                        letterSpacing: 0.3,
-                        textTransform: "uppercase",
-                        color: "#6b7280",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Recent searches
-                    </h4>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearRecentSearches();
-                        setRecentSearches([]);
-                        setActiveIndex(-1);
-                      }}
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        color: "#2563eb",
-                        cursor: "pointer",
-                        fontSize: 13,
-                        fontWeight: 600,
-                      }}
-                    >
-                      Clear
-                    </button>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {emptyStateItems.recent.map((item: string, index: number) => (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => handleRecentClick(item)}
-                        style={getItemStyle(index)}
-                      >
-                        <span>🕘</span>
-                        <span>{item}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <h4
+          <div
+            style={{
+              maxHeight: 320,
+              overflowY: "auto",
+              padding: 12,
+            }}
+          >
+            {isEmpty ? (
+              emptyStateItems.recent.length === 0 && emptyStateItems.trending.length === 0 ? (
+                <div
                   style={{
-                    margin: "0 0 10px 0",
-                    fontSize: 13,
-                    letterSpacing: 0.3,
-                    textTransform: "uppercase",
+                    padding: "20px 12px",
+                    textAlign: "center",
                     color: "#6b7280",
-                    fontWeight: 700,
+                    fontSize: 14,
+                    lineHeight: 1.6,
                   }}
                 >
-                  Trending
-                </h4>
-
-                <div style={{ display: "grid", gap: 8 }}>
-                  {emptyStateItems.trending.map((item: string, index: number) => {
-                    const realIndex = emptyStateItems.recent.length + index;
-
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => handleTrendingClick(item)}
-                        style={getItemStyle(realIndex)}
-                      >
-                        <span>🔥</span>
-                        <span>{item}</span>
-                      </button>
-                    );
-                  })}
+                  No recent searches yet.
                 </div>
-              </div>
-            </div>
-          ) : loading ? (
-            <div style={{ padding: 16, color: "#6b7280", fontSize: 14 }}>
-              Searching...
-            </div>
-          ) : suggestions.length > 0 ? (
-            <div style={{ padding: 8 }}>
-              {suggestions.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleSuggestionClick(item)}
-                  style={getItemStyle(index)}
-                >
-                  <span>🔎</span>
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontWeight: 600 }}>{item.title}</div>
-                    <div style={{ fontSize: 13, color: "#6b7280" }}>
-                      {[item.country, item.type].filter(Boolean).join(" • ")}
+              ) : (
+                <div>
+                  {emptyStateItems.recent.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 10,
+                          padding: "0 4px",
+                        }}
+                      >
+                        <h4
+                          style={{
+                            margin: 0,
+                            fontSize: 12,
+                            letterSpacing: 0.4,
+                            textTransform: "uppercase",
+                            color: "#6b7280",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Recent searches
+                        </h4>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearRecentSearches();
+                            setRecentSearches([]);
+                            setActiveIndex(-1);
+                          }}
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            color: "#2563eb",
+                            cursor: "pointer",
+                            fontSize: 13,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </div>
+
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {emptyStateItems.recent.map((item: string, index: number) => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => handleRecentClick(item)}
+                            style={getItemStyle(index)}
+                          >
+                            <span>🕘</span>
+                            <span>{item}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div style={{ padding: 16 }}>
-              <button
-                type="button"
-                onClick={() => goToSearch(trimmedQuery)}
-                style={getItemStyle(0)}
+                  )}
+
+                  {emptyStateItems.trending.length > 0 && (
+                    <div>
+                      <h4
+                        style={{
+                          margin: "0 0 10px 0",
+                          padding: "0 4px",
+                          fontSize: 12,
+                          letterSpacing: 0.4,
+                          textTransform: "uppercase",
+                          color: "#6b7280",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Trending
+                      </h4>
+
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {emptyStateItems.trending.map((item: string, index: number) => {
+                          const realIndex = emptyStateItems.recent.length + index;
+
+                          return (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => handleTrendingClick(item)}
+                              style={getItemStyle(realIndex)}
+                            >
+                              <span>🔥</span>
+                              <span>{item}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            ) : loading ? (
+              <div
+                style={{
+                  padding: "18px 12px",
+                  color: "#6b7280",
+                  fontSize: 14,
+                }}
               >
-                <span>🔍</span>
-                <span>Search for “{trimmedQuery}”</span>
-              </button>
-            </div>
-          )}
+                Searching...
+              </div>
+            ) : suggestions.length > 0 ? (
+              <div style={{ display: "grid", gap: 6 }}>
+                {suggestions.map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSuggestionClick(item)}
+                    style={getItemStyle(index)}
+                  >
+                    <span>🔎</span>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontWeight: 600 }}>{item.title}</div>
+                      <div style={{ fontSize: 13, color: "#6b7280" }}>
+                        {[item.country, item.type].filter(Boolean).join(" • ")}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => goToSearch(trimmedQuery)}
+                  style={getItemStyle(0)}
+                >
+                  <span>🔍</span>
+                  <span>Search for “{trimmedQuery}”</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -493,4 +533,5 @@ const dropdownItemStyle: CSSProperties = {
   borderRadius: 12,
   fontSize: 15,
   transition: "all 0.15s ease",
+  textAlign: "left",
 };
