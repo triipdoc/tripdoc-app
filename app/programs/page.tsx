@@ -171,7 +171,8 @@ export default async function ProgramsPage({
   const sort = params.sort?.trim() || "latest";
 
   const parsedPage = Number(params.page || "1");
-  const currentPage = Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1;
+  const currentPage =
+    Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1;
 
   const needsAnalyticsSort = [
     "trending_7d",
@@ -214,7 +215,7 @@ export default async function ProgramsPage({
     }
 
     const allPrograms = orderProgramsBySort((data || []) as Program[], sort);
-    const totalPrograms = count || allPrograms.length;
+    const totalPrograms = count ?? allPrograms.length;
     const totalPages = Math.max(Math.ceil(totalPrograms / PAGE_SIZE), 1);
     const safeCurrentPage = Math.min(currentPage, totalPages);
 
@@ -306,7 +307,7 @@ export default async function ProgramsPage({
 
   const orderedPrograms = orderProgramsByRanking(allPrograms, ranking);
 
-  const totalPrograms = count || orderedPrograms.length;
+  const totalPrograms = count ?? orderedPrograms.length;
   const totalPages = Math.max(Math.ceil(totalPrograms / PAGE_SIZE), 1);
   const safeCurrentPage = Math.min(currentPage, totalPages);
 

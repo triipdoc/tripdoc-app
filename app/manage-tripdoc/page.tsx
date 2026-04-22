@@ -85,6 +85,152 @@ type ProgramsResponse = {
 
 const PAGE_SIZE = 10;
 
+const TYPE_OPTIONS = [
+  "Scholarship",
+  "Internship",
+  "Fellowship",
+  "Research",
+  "Job",
+  "Exchange Program",
+  "Training",
+  "Conference",
+  "Volunteer",
+  "Grant",
+  "Programme",
+];
+
+const FUNDING_OPTIONS = [
+  "Fully Funded",
+  "Partially Funded",
+  "Funded",
+  "Paid",
+  "Unpaid",
+  "Stipend",
+  "Tuition Waiver",
+];
+
+const COUNTRY_OPTIONS = [
+  "Australia",
+  "Austria",
+  "Belgium",
+  "Canada",
+  "China",
+  "Denmark",
+  "Finland",
+  "France",
+  "Germany",
+  "Global",
+  "Hungary",
+  "India",
+  "Ireland",
+  "Italy",
+  "Japan",
+  "Malaysia",
+  "Multiple Countries",
+  "Netherlands",
+  "New Zealand",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Romania",
+  "Singapore",
+  "South Korea",
+  "Spain",
+  "Sweden",
+  "Switzerland",
+  "United Kingdom",
+  "United States",
+];
+
+function toTitleCase(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function normalizeCountry(value: string) {
+  const raw = value.trim().toLowerCase();
+
+  const map: Record<string, string> = {
+    uk: "United Kingdom",
+    "u.k.": "United Kingdom",
+    britain: "United Kingdom",
+    england: "United Kingdom",
+    usa: "United States",
+    us: "United States",
+    "u.s.a.": "United States",
+    "u.s.": "United States",
+    worldwide: "Global",
+    international: "Global",
+    global: "Global",
+    "all round": "Global",
+    commonwealth: "Multiple Countries",
+    "commonwealth countries": "Multiple Countries",
+    multiple: "Multiple Countries",
+    multicountry: "Multiple Countries",
+    "multi country": "Multiple Countries",
+  };
+
+  return map[raw] || toTitleCase(value);
+}
+
+function normalizeType(value: string) {
+  const raw = value.trim().toLowerCase();
+
+  const map: Record<string, string> = {
+    scholarship: "Scholarship",
+    scholarships: "Scholarship",
+    internship: "Internship",
+    internships: "Internship",
+    fellowships: "Fellowship",
+    fellowship: "Fellowship",
+    research: "Research",
+    job: "Job",
+    jobs: "Job",
+    volunteer: "Volunteer",
+    volunteering: "Volunteer",
+    conference: "Conference",
+    grant: "Grant",
+    grants: "Grant",
+    programme: "Programme",
+    program: "Programme",
+    "exchange program": "Exchange Program",
+    "exchange programme": "Exchange Program",
+    training: "Training",
+    "paid internship": "Internship",
+    "research scientist intern": "Internship",
+    "paid student programme": "Programme",
+    "daad scholarship fully": "Scholarship",
+  };
+
+  return map[raw] || toTitleCase(value);
+}
+
+function normalizeFunding(value: string) {
+  const raw = value.trim().toLowerCase();
+
+  const map: Record<string, string> = {
+    "full funded": "Fully Funded",
+    "fully funded": "Fully Funded",
+    "fully-funded": "Fully Funded",
+    "partial funded": "Partially Funded",
+    "partially funded": "Partially Funded",
+    funded: "Funded",
+    paid: "Paid",
+    unpaid: "Unpaid",
+    stipend: "Stipend",
+    "paid internship": "Paid",
+    "paid professional program": "Paid",
+    "paid professional programme": "Paid",
+    "tuition waiver": "Tuition Waiver",
+  };
+
+  return map[raw] || toTitleCase(value);
+}
+
 function generateSlug(text: string) {
   return text
     .toLowerCase()
@@ -365,6 +511,10 @@ export default function AdminPage() {
   const addProgram = async () => {
     setNotice(null);
 
+    const normalizedCountry = normalizeCountry(country);
+const normalizedType = normalizeType(type);
+const normalizedFunding = normalizeFunding(funding);
+
     const finalSlug = generateSlug(slug || title);
     if (!finalSlug) {
       setFormErrors((prev) => ({
@@ -380,8 +530,8 @@ export default function AdminPage() {
 
     if (!title.trim()) nextErrors.title = "Title is required.";
     if (!finalSlug.trim()) nextErrors.slug = "Slug is required.";
-    if (!country.trim()) nextErrors.country = "Country is required.";
-    if (!type.trim()) nextErrors.type = "Type is required.";
+    if (!normalizedCountry.trim()) nextErrors.country = "Country is required.";
+if (!normalizedType.trim()) nextErrors.type = "Type is required.";
     if (officialUrl.trim() && !isValidUrl(officialUrl)) {
       nextErrors.officialUrl = "Official URL must be a valid http/https link.";
     }
@@ -410,9 +560,9 @@ export default function AdminPage() {
         body: JSON.stringify({
           title: title.trim(),
           slug: finalSlug,
-          country: country.trim(),
-          type: type.trim(),
-          funding_type: funding.trim(),
+          country: normalizedCountry,
+type: normalizedType,
+funding_type: normalizedFunding,
           deadline: deadline || "",
           official_url: officialUrl.trim(),
           image_url: finalImageUrl,
@@ -459,6 +609,11 @@ export default function AdminPage() {
   };
 
   const updateProgram = async () => {
+
+    const normalizedCountry = normalizeCountry(country);
+const normalizedType = normalizeType(type);
+const normalizedFunding = normalizeFunding(funding);
+
     if (!editingId) return;
 
     setNotice(null);
@@ -478,8 +633,8 @@ export default function AdminPage() {
 
     if (!title.trim()) nextErrors.title = "Title is required.";
     if (!finalSlug.trim()) nextErrors.slug = "Slug is required.";
-    if (!country.trim()) nextErrors.country = "Country is required.";
-    if (!type.trim()) nextErrors.type = "Type is required.";
+    if (!normalizedCountry.trim()) nextErrors.country = "Country is required.";
+if (!normalizedType.trim()) nextErrors.type = "Type is required.";
     if (officialUrl.trim() && !isValidUrl(officialUrl)) {
       nextErrors.officialUrl = "Official URL must be a valid http/https link.";
     }
@@ -508,9 +663,9 @@ export default function AdminPage() {
         body: JSON.stringify({
           title: title.trim(),
           slug: finalSlug,
-          country: country.trim(),
-          type: type.trim(),
-          funding_type: funding.trim(),
+          country: normalizedCountry,
+type: normalizedType,
+funding_type: normalizedFunding,
           deadline: deadline || "",
           official_url: officialUrl.trim(),
           image_url: finalImageUrl,
@@ -576,9 +731,9 @@ export default function AdminPage() {
         body: JSON.stringify({
           title: updates.title ?? program.title ?? "",
           slug: updates.slug ?? program.slug ?? generateSlug(program.title || ""),
-          country: updates.country ?? program.country ?? "",
-          type: updates.type ?? program.type ?? "",
-          funding_type: updates.funding_type ?? program.funding_type ?? "",
+          country: normalizeCountry(updates.country ?? program.country ?? ""),
+type: normalizeType(updates.type ?? program.type ?? ""),
+funding_type: normalizeFunding(updates.funding_type ?? program.funding_type ?? ""),
           deadline: updates.deadline ?? program.deadline ?? "",
           official_url: updates.official_url ?? program.official_url ?? "",
           image_url: updates.image_url ?? program.image_url ?? "",
@@ -704,9 +859,9 @@ export default function AdminPage() {
     setEditingId(program.id);
     setTitle(program.title || "");
     setSlug(program.slug || generateSlug(program.title || ""));
-    setCountry(program.country || "");
-    setType(program.type || "");
-    setFunding(program.funding_type || "");
+    setCountry(normalizeCountry(program.country || ""));
+setType(normalizeType(program.type || ""));
+setFunding(normalizeFunding(program.funding_type || ""));
     setDeadline(program.deadline || "");
     setOfficialUrl(program.official_url || "");
     setImageUrl(program.image_url || "");
@@ -1111,39 +1266,57 @@ export default function AdminPage() {
         </div>
 
         <div>
-          <input
-            placeholder="Country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            style={inputStyle}
-          />
-          {formErrors.country && (
-            <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
-              {formErrors.country}
-            </div>
-          )}
-        </div>
+  <input
+    list="country-options"
+    placeholder="Country"
+    value={country}
+    onChange={(e) => setCountry(e.target.value)}
+    style={inputStyle}
+  />
+  <datalist id="country-options">
+    {COUNTRY_OPTIONS.map((option) => (
+      <option key={option} value={option} />
+    ))}
+  </datalist>
+  {formErrors.country && (
+    <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
+      {formErrors.country}
+    </div>
+  )}
+</div>
 
         <div>
-          <input
-            placeholder="Type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            style={inputStyle}
-          />
-          {formErrors.type && (
-            <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
-              {formErrors.type}
-            </div>
-          )}
-        </div>
+  <select
+    value={type}
+    onChange={(e) => setType(e.target.value)}
+    style={inputStyle}
+  >
+    <option value="">Select type</option>
+    {TYPE_OPTIONS.map((option) => (
+      <option key={option} value={option}>
+        {option}
+      </option>
+    ))}
+  </select>
+  {formErrors.type && (
+    <div style={{ color: "#c62828", fontSize: 13, marginTop: 6 }}>
+      {formErrors.type}
+    </div>
+  )}
+</div>
 
-        <input
-          placeholder="Funding"
-          value={funding}
-          onChange={(e) => setFunding(e.target.value)}
-          style={inputStyle}
-        />
+        <select
+  value={funding}
+  onChange={(e) => setFunding(e.target.value)}
+  style={inputStyle}
+>
+  <option value="">Select funding</option>
+  {FUNDING_OPTIONS.map((option) => (
+    <option key={option} value={option}>
+      {option}
+    </option>
+  ))}
+</select>
 
         <input
           type="date"

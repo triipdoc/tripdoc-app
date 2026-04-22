@@ -2,114 +2,183 @@ export default function Footer() {
   return (
     <footer
       style={{
-        marginTop: 60,
-        padding: "50px 24px 30px",
-        borderTop: "1px solid #eee",
-        background: "linear-gradient(180deg, #fafafa 0%, #ffffff 100%)",
+        marginTop: 56,
+        padding: "48px 24px 28px",
+        borderTop: "1px solid #e5e7eb",
+        background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)",
         fontSize: 14,
         color: "#555",
       }}
     >
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        
-        {/* TOP SECTION */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             gap: 40,
             flexWrap: "wrap",
-            marginBottom: 30,
+            marginBottom: 28,
           }}
         >
-          {/* BRAND */}
-          <div style={{ maxWidth: 320 }}>
-            <div
+          {/* Brand */}
+          <div style={{ maxWidth: 340 }}>
+            <a
+              href="/"
               style={{
-                fontWeight: 900,
-                fontSize: 22,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                textDecoration: "none",
                 color: "#111",
-                marginBottom: 10,
+                marginBottom: 14,
               }}
             >
-              🌍 TripDoc
-            </div>
+              <img
+                src="/logo.png"
+                alt="TripDoc logo"
+                style={{
+                  width: 34,
+                  height: 34,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: 18,
+                  letterSpacing: "-0.2px",
+                }}
+              >
+                TripDoc
+              </span>
+            </a>
 
-            <p style={{ lineHeight: 1.6 }}>
-              Discover verified scholarships, internships, fellowships, and
-              global opportunities — all in one place.
+            <p
+              style={{
+                margin: "0 0 14px 0",
+                lineHeight: 1.7,
+                color: "#4b5563",
+                fontSize: 16,
+              }}
+            >
+              Discover verified scholarships, internships, fellowships, and global
+              opportunities — all in one place.
             </p>
 
-            <p style={{ marginTop: 12, fontSize: 13, color: "#777" }}>
+            <p
+              style={{
+                margin: 0,
+                lineHeight: 1.7,
+                color: "#6b7280",
+                fontSize: 14,
+              }}
+            >
               ⚠️ Always verify details on official websites before applying.
             </p>
           </div>
 
-          {/* LINKS */}
+          {/* Links */}
           <div
             style={{
               display: "flex",
-              gap: 50,
+              gap: 56,
               flexWrap: "wrap",
             }}
           >
-            {/* Explore */}
             <div>
-              <div style={{ fontWeight: 800, marginBottom: 10, color: "#111" }}>
+              <div
+                style={{
+                  fontWeight: 800,
+                  marginBottom: 12,
+                  color: "#111",
+                  fontSize: 15,
+                }}
+              >
                 Explore
               </div>
 
-              <div style={{ display: "grid", gap: 8 }}>
-                <a href="/" style={linkStyle}>Home</a>
-                <a href="/programs" style={linkStyle}>All Opportunities</a>
-                <a href="/types/scholarship" style={linkStyle}>Scholarships</a>
-                <a href="/types/internship" style={linkStyle}>Internships</a>
-                <a href="/types/fellowship" style={linkStyle}>Fellowships</a>
+              <div style={{ display: "grid", gap: 10 }}>
+                <a href="/" style={footerLinkStyle}>
+                  Home
+                </a>
+                <a href="/programs" style={footerLinkStyle}>
+                  All Opportunities
+                </a>
+                <a href="/types/scholarship" style={footerLinkStyle}>
+                  Scholarships
+                </a>
+                <a href="/types/internship" style={footerLinkStyle}>
+                  Internships
+                </a>
+                <a href="/types/fellowship" style={footerLinkStyle}>
+                  Fellowships
+                </a>
               </div>
             </div>
 
-            {/* Company */}
             <div>
-              <div style={{ fontWeight: 800, marginBottom: 10, color: "#111" }}>
+              <div
+                style={{
+                  fontWeight: 800,
+                  marginBottom: 12,
+                  color: "#111",
+                  fontSize: 15,
+                }}
+              >
                 Company
               </div>
 
-              <div style={{ display: "grid", gap: 8 }}>
-                <a href="/about" style={linkStyle}>About Us</a>
-                <a href="/contact" style={linkStyle}>Contact</a>
+              <div style={{ display: "grid", gap: 10 }}>
+                <a href="/about" style={footerLinkStyle}>
+                  About Us
+                </a>
+                <a href="/contact" style={footerLinkStyle}>
+                  Contact
+                </a>
               </div>
             </div>
 
-            {/* Legal */}
             <div>
-              <div style={{ fontWeight: 800, marginBottom: 10, color: "#111" }}>
+              <div
+                style={{
+                  fontWeight: 800,
+                  marginBottom: 12,
+                  color: "#111",
+                  fontSize: 15,
+                }}
+              >
                 Legal
               </div>
 
-              <div style={{ display: "grid", gap: 8 }}>
-                <a href="/privacy" style={linkStyle}>Privacy Policy</a>
-                <a href="/terms" style={linkStyle}>Terms & Conditions</a>
-                <a href="/disclaimer" style={linkStyle}>Disclaimer</a>
+              <div style={{ display: "grid", gap: 10 }}>
+                <a href="/privacy" style={footerLinkStyle}>
+                  Privacy Policy
+                </a>
+                <a href="/terms" style={footerLinkStyle}>
+                  Terms & Conditions
+                </a>
+                <a href="/disclaimer" style={footerLinkStyle}>
+                  Disclaimer
+                </a>
               </div>
             </div>
           </div>
         </div>
 
-        {/* BOTTOM */}
         <div
           style={{
-            borderTop: "1px solid #eee",
-            paddingTop: 16,
+            borderTop: "1px solid #e5e7eb",
+            paddingTop: 18,
             display: "flex",
             justifyContent: "space-between",
             flexWrap: "wrap",
-            gap: 10,
+            gap: 12,
             fontSize: 13,
-            color: "#777",
+            color: "#6b7280",
           }}
         >
           <span>© {new Date().getFullYear()} TripDoc. All rights reserved.</span>
-
           <span style={{ fontWeight: 600 }}>
             Built for global opportunity seekers 🚀
           </span>
@@ -119,9 +188,8 @@ export default function Footer() {
   );
 }
 
-const linkStyle = {
+const footerLinkStyle = {
   textDecoration: "none",
-  color: "#444",
+  color: "#374151",
   fontWeight: 500,
-  transition: "all 0.2s ease",
 };

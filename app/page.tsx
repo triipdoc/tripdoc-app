@@ -1246,7 +1246,10 @@ export default async function Home() {
             </p>
           </div>
 
-          <ProgramsClient initialPrograms={programs} />
+          <ProgramsClient
+            initialPrograms={verifiedActivePrograms}
+            totalPrograms={verifiedActivePrograms.length}
+          />
         </div>
       </main>
     </>

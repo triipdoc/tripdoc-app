@@ -49,6 +49,10 @@ function toTypeSlug(type: string) {
   return type.toLowerCase().trim().replace(/\s+/g, "-");
 }
 
+function toFundingSlug(funding: string) {
+  return funding.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
 function Badge({ status }: { status?: string | null }) {
   const s = (status || "pending").toLowerCase();
   const isVerified = s === "verified";
@@ -212,7 +216,7 @@ export default function ProgramsClient({
   showBackLink = false,
   currentPage = 1,
   totalPages = 1,
-  totalPrograms = 0,
+  totalPrograms,
   selectedType = "all",
   selectedCountry = "all",
   selectedFunding = "all",
@@ -226,6 +230,10 @@ export default function ProgramsClient({
   const [funding, setFunding] = useState(selectedFunding);
   const [sort, setSort] = useState(selectedSort);
   const [copiedProgramId, setCopiedProgramId] = useState<string | null>(null);
+
+  const safeTotalPrograms = totalPrograms ?? initialPrograms.length;
+  const safeTotalPages = totalPages < 1 ? 1 : totalPages;
+  const safeCurrentPage = currentPage < 1 ? 1 : currentPage;
 
   async function trackClick(programId: string, action: string) {
     try {
@@ -501,7 +509,7 @@ export default function ProgramsClient({
         </button>
 
         <div style={{ color: "#555", fontWeight: 600 }}>
-          Showing {filtered.length} on this page • {totalPrograms} total opportunities
+          Showing {filtered.length} on this page • {safeTotalPrograms} total opportunities
         </div>
       </div>
 
@@ -688,22 +696,22 @@ export default function ProgramsClient({
                       )}
                     </div>
                     <div>
-  <strong>Funding:</strong>{" "}
-  {p.funding_type ? (
-    <a
-      href={`/funding/${p.funding_type.toLowerCase().trim().replace(/\s+/g, "-")}`}
-      style={{
-        color: "#0070f3",
-        textDecoration: "none",
-        fontWeight: 600,
-      }}
-    >
-      {p.funding_type}
-    </a>
-  ) : (
-    "—"
-  )}
-</div>
+                      <strong>Funding:</strong>{" "}
+                      {p.funding_type ? (
+                        <a
+                          href={`/funding/${toFundingSlug(p.funding_type)}`}
+                          style={{
+                            color: "#0070f3",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {p.funding_type}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </div>
                     <div>
                       <strong>Deadline:</strong> {p.deadline || "—"}
                     </div>
@@ -814,13 +822,13 @@ export default function ProgramsClient({
             }}
           >
             <div style={{ color: "#666", fontSize: 14 }}>
-              Showing page {currentPage} of {totalPages} • {totalPrograms} total opportunities
+              Showing page {safeCurrentPage} of {safeTotalPages} • {safeTotalPrograms} total opportunities
             </div>
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {currentPage > 1 && (
+              {safeCurrentPage > 1 && (
                 <a
-                  href={buildPageLink(currentPage - 1)}
+                  href={buildPageLink(safeCurrentPage - 1)}
                   style={{
                     padding: "10px 16px",
                     borderRadius: 10,
@@ -835,9 +843,9 @@ export default function ProgramsClient({
                 </a>
               )}
 
-              {currentPage < totalPages && (
+              {safeCurrentPage < safeTotalPages && (
                 <a
-                  href={buildPageLink(currentPage + 1)}
+                  href={buildPageLink(safeCurrentPage + 1)}
                   style={{
                     padding: "10px 16px",
                     borderRadius: 10,
