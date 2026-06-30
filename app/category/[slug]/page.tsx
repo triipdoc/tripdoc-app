@@ -1,5 +1,6 @@
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 type Program = {
   id: string;
@@ -59,7 +60,7 @@ export default async function CategoryPage({
   if (error) {
     return (
       <main style={{ maxWidth: 1000, margin: "0 auto", padding: 40 }}>
-        <a
+        <Link
           href="/"
           style={{
             display: "inline-block",
@@ -70,7 +71,7 @@ export default async function CategoryPage({
           }}
         >
           ← Back to home
-        </a>
+        </Link>
 
         <h1 style={{ marginBottom: 12 }}>Something went wrong</h1>
         <p style={{ color: "#666" }}>Unable to load this category right now.</p>
@@ -84,7 +85,7 @@ export default async function CategoryPage({
 
   return (
     <main style={{ maxWidth: 1000, margin: "0 auto", padding: 40 }}>
-      <a
+      <Link
         href="/"
         style={{
           display: "inline-block",
@@ -95,7 +96,7 @@ export default async function CategoryPage({
         }}
       >
         ← Back to home
-      </a>
+      </Link>
 
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ marginBottom: 10 }}>
@@ -130,7 +131,7 @@ export default async function CategoryPage({
           }}
         >
           {programs.map((p) => (
-            <a
+            <Link
               key={p.id}
               href={`/programs/${p.slug}`}
               style={{
@@ -215,7 +216,7 @@ export default async function CategoryPage({
                     : "⏳ Pending"}
                 </span>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}

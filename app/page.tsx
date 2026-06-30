@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import ProgramsClient from "./programs/ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
@@ -553,7 +554,7 @@ export default async function Home() {
               marginBottom: 28,
             }}
           >
-            <a
+            <Link
               href="/types/scholarship"
               style={{
                 background: "#ffffff",
@@ -571,9 +572,9 @@ export default async function Home() {
               }}
             >
               🎓 Explore Scholarships
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/types/internship"
               style={{
                 border: "1px solid rgba(255,255,255,0.65)",
@@ -590,7 +591,7 @@ export default async function Home() {
               }}
             >
               💼 Explore Internships
-            </a>
+            </Link>
           </div>
 
           <div style={{ maxWidth: 760, margin: "0 auto 24px" }}>
@@ -727,6 +728,84 @@ export default async function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 0,
+            marginBottom: 28,
+            border: "1px solid rgba(41,82,213,0.22)",
+            borderRadius: 20,
+            padding: "28px 24px",
+            background:
+              "linear-gradient(135deg, #17307a 0%, #2952d5 72%, #3b82f6 100%)",
+            boxShadow: "0 14px 35px rgba(23,48,122,0.16)",
+            color: "white",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 22,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ maxWidth: 720 }}>
+              <div
+                style={{
+                  display: "inline-block",
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.14)",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                  color: "rgba(255,255,255,0.94)",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                Career discovery
+              </div>
+
+              <h2 style={{ margin: "0 0 10px 0", fontSize: 30, fontWeight: 800 }}>
+                2026 Global Hiring Companies by Country
+              </h2>
+
+              <p
+                style={{
+                  color: "rgba(255,255,255,0.9)",
+                  margin: 0,
+                  lineHeight: 1.65,
+                  fontSize: 16,
+                }}
+              >
+                Browse verified company career pages by country, industry, visa
+                sponsorship signals, relocation support, and graduate programs.
+              </p>
+            </div>
+
+            <Link
+              href="/hiring-companies"
+              style={{
+                background: "#ffffff",
+                color: "#2952d5",
+                padding: "13px 18px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 46,
+                minWidth: 210,
+                boxShadow: "0 8px 22px rgba(0,0,0,0.12)",
+              }}
+            >
+              Explore Hiring Companies
+            </Link>
           </div>
         </div>
 
@@ -873,21 +952,21 @@ export default async function Home() {
           </p>
 
           <HorizontalRow>
-            <a href="/types/scholarship" style={quickCardStyle} className="horizontal-card">
+            <Link href="/types/scholarship" style={quickCardStyle} className="horizontal-card">
               🎓 Scholarships
-            </a>
+            </Link>
 
-            <a href="/types/internship" style={quickCardStyle} className="horizontal-card">
+            <Link href="/types/internship" style={quickCardStyle} className="horizontal-card">
               💼 Internships
-            </a>
+            </Link>
 
-            <a href="/types/research" style={quickCardStyle} className="horizontal-card">
+            <Link href="/types/research" style={quickCardStyle} className="horizontal-card">
               🔬 Research
-            </a>
+            </Link>
 
-            <a href="/types/fellowship" style={quickCardStyle} className="horizontal-card">
+            <Link href="/types/fellowship" style={quickCardStyle} className="horizontal-card">
               🌍 Fellowships
-            </a>
+            </Link>
           </HorizontalRow>
         </div>
 
@@ -921,14 +1000,14 @@ export default async function Home() {
           <HorizontalRow>
             {homepageCountries.length > 0 ? (
               homepageCountries.map((country) => (
-                <a
+                <Link
                   key={country}
                   href={`/countries/${toCountrySlug(country)}`}
                   style={quickCardStyle}
                   className="horizontal-card"
                 >
                   {getCountryEmoji(country)} {country}
-                </a>
+                </Link>
               ))
             ) : (
               <div
@@ -974,14 +1053,14 @@ export default async function Home() {
           <HorizontalRow>
             {homepageFunding.length > 0 ? (
               homepageFunding.map((funding) => (
-                <a
+                <Link
                   key={funding}
                   href={`/funding/${toFundingSlug(funding)}`}
                   style={quickCardStyle}
                   className="horizontal-card"
                 >
                   💰 {funding}
-                </a>
+                </Link>
               ))
             ) : (
               <div
@@ -1217,7 +1296,7 @@ export default async function Home() {
               Explore All Opportunities
             </a>
 
-            <a
+            <Link
               href="/programs"
               style={{
                 border: "1px solid #ddd",
@@ -1230,7 +1309,7 @@ export default async function Home() {
               }}
             >
               Open Programs Page
-            </a>
+            </Link>
           </div>
         </div>
 

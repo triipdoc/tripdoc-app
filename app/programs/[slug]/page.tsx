@@ -1,6 +1,7 @@
 import CopyLinkButton from "./CopyLinkButton";
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
+import Link from "next/link";
 import StickyApplyBar from "./StickyApplyBar";
 import ApplyNowButton from "./ApplyNowButton";
 import TrackedProgramLink from "../../components/TrackedProgramLink";
@@ -242,7 +243,7 @@ export default async function ProgramDetailPage({
           margin: "0 auto",
         }}
       >
-        <a
+        <Link
           href="/programs"
           style={{
             display: "inline-block",
@@ -253,7 +254,7 @@ export default async function ProgramDetailPage({
           }}
         >
           ← Back to programs
-        </a>
+        </Link>
 
         <div
           style={{
@@ -347,7 +348,7 @@ export default async function ProgramDetailPage({
   return (
     <main style={{ fontFamily: "Arial", background: "#fff" }}>
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 40px" }}>
-        <a
+        <Link
           href="/programs"
           style={{
             display: "inline-block",
@@ -358,7 +359,7 @@ export default async function ProgramDetailPage({
           }}
         >
           ← Back to programs
-        </a>
+        </Link>
 
         <h1
           style={{
@@ -386,7 +387,7 @@ export default async function ProgramDetailPage({
           {program.country && (
             <span>
               🌍{" "}
-              <a
+              <Link
                 href={`/countries/${toCountrySlug(program.country)}`}
                 style={{
                   color: "#0070f3",
@@ -395,13 +396,13 @@ export default async function ProgramDetailPage({
                 }}
               >
                 {program.country}
-              </a>
+              </Link>
             </span>
           )}
           {program.type && (
             <span>
               📚{" "}
-              <a
+              <Link
                 href={`/types/${toTypeSlug(program.type)}`}
                 style={{
                   color: "#0070f3",
@@ -410,13 +411,13 @@ export default async function ProgramDetailPage({
                 }}
               >
                 {program.type}
-              </a>
+              </Link>
             </span>
           )}
           {program.funding_type && (
   <span>
     💰{" "}
-    <a
+    <Link
       href={`/funding/${toCountrySlug(program.funding_type)}`}
       style={{
         color: "#0070f3",
@@ -425,7 +426,7 @@ export default async function ProgramDetailPage({
       }}
     >
       {program.funding_type}
-    </a>
+    </Link>
   </span>
 )}
           {program.deadline && <span>📅 Deadline: {program.deadline}</span>}
@@ -491,7 +492,7 @@ export default async function ProgramDetailPage({
                 {program.country ? (
                   <>
                     🌍{" "}
-                    <a
+                    <Link
                       href={`/countries/${toCountrySlug(program.country)}`}
                       style={{
                         color: "#0070f3",
@@ -500,7 +501,7 @@ export default async function ProgramDetailPage({
                       }}
                     >
                       {program.country}
-                    </a>
+                    </Link>
                   </>
                 ) : (
                   "—"
@@ -516,7 +517,7 @@ export default async function ProgramDetailPage({
                 {program.type ? (
                   <>
                     📚{" "}
-                    <a
+                    <Link
                       href={`/types/${toTypeSlug(program.type)}`}
                       style={{
                         color: "#0070f3",
@@ -525,7 +526,7 @@ export default async function ProgramDetailPage({
                       }}
                     >
                       {program.type}
-                    </a>
+                    </Link>
                   </>
                 ) : (
                   "—"
@@ -541,7 +542,7 @@ export default async function ProgramDetailPage({
   {program.funding_type ? (
     <>
       💰{" "}
-      <a
+      <Link
         href={`/funding/${toCountrySlug(program.funding_type)}`}
         style={{
           color: "#0070f3",
@@ -550,7 +551,7 @@ export default async function ProgramDetailPage({
         }}
       >
         {program.funding_type}
-      </a>
+      </Link>
     </>
   ) : (
     "—"

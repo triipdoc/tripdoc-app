@@ -1,5 +1,6 @@
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 type Program = {
   id: string;
@@ -28,12 +29,12 @@ export async function generateMetadata({
   const label = formatCountryLabel(countryName);
 
   return {
-    title: `Opportunities in ${label}`,
+    title: `Opportunities in ${label} | TripDoc`,
     description: `Explore verified scholarships, internships, fellowships, and research opportunities available in ${label} on TripDoc.`,
     openGraph: {
       title: `Opportunities in ${label} | TripDoc`,
       description: `Explore verified opportunities available in ${label} on TripDoc.`,
-      url: `https://app.tripdoc.net/country/${encodeURIComponent(countryName)}`,
+      url: `https://app.tripdoc.net/countries/${encodeURIComponent(countryName)}`,
       siteName: "TripDoc",
       type: "website",
     },
@@ -52,17 +53,19 @@ export default async function CountryPage({
 }) {
   const { slug } = await params;
   const countryName = decodeURIComponent(slug);
+  const label = formatCountryLabel(countryName);
 
   const { data, error } = await supabase
     .from("programs")
     .select("id,title,slug,country,funding_type,image_url,verification_status")
-    .ilike("country", countryName)
+    .eq("verification_status", "verified")
+    .eq("country", label)
     .order("created_at", { ascending: false });
 
   if (error) {
     return (
       <main style={{ maxWidth: 1000, margin: "0 auto", padding: 40 }}>
-        <a
+        <Link
           href="/"
           style={{
             display: "inline-block",
@@ -73,7 +76,7 @@ export default async function CountryPage({
           }}
         >
           ← Back to home
-        </a>
+        </Link>
 
         <h1 style={{ marginBottom: 12 }}>Something went wrong</h1>
         <p style={{ color: "#666" }}>Unable to load this country page right now.</p>
@@ -87,7 +90,7 @@ export default async function CountryPage({
 
   return (
     <main style={{ maxWidth: 1000, margin: "0 auto", padding: 40 }}>
-      <a
+      <Link
         href="/"
         style={{
           display: "inline-block",
@@ -98,15 +101,13 @@ export default async function CountryPage({
         }}
       >
         ← Back to home
-      </a>
+      </Link>
 
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ marginBottom: 10 }}>
-          Opportunities in {formatCountryLabel(countryName)}
-        </h1>
+        <h1 style={{ marginBottom: 10 }}>Opportunities in {label}</h1>
 
         <p style={{ color: "#666", margin: 0 }}>
-          Explore verified opportunities available in {formatCountryLabel(countryName)}.
+          Explore verified opportunities available in {label}.
         </p>
       </div>
 
@@ -121,7 +122,7 @@ export default async function CountryPage({
         >
           <h2 style={{ marginTop: 0, marginBottom: 8 }}>No opportunities yet</h2>
           <p style={{ margin: 0, color: "#666" }}>
-            No opportunities were found for this country for now.
+            No verified opportunities were found for this country for now.
           </p>
         </div>
       ) : (
@@ -133,7 +134,7 @@ export default async function CountryPage({
           }}
         >
           {programs.map((p) => (
-            <a
+            <Link
               key={p.id}
               href={`/programs/${p.slug}`}
               style={{
@@ -207,18 +208,13 @@ export default async function CountryPage({
                     fontSize: 12,
                     fontWeight: 700,
                     border: "1px solid #ddd",
-                    background:
-                      p.verification_status === "verified"
-                        ? "#eaffea"
-                        : "#fff6dd",
+                    background: "#eaffea",
                   }}
                 >
-                  {p.verification_status === "verified"
-                    ? "✅ Verified"
-                    : "⏳ Pending"}
+                  ✅ Verified
                 </span>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}

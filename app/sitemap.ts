@@ -45,6 +45,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: baseUrl,
       lastModified: new Date().toISOString(),
     },
+    {
+      url: `${baseUrl}/hiring-companies`,
+      lastModified: new Date().toISOString(),
+    },
     ...categoryUrls,
     ...countryUrls,
     ...programUrls,

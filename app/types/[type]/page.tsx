@@ -1,5 +1,6 @@
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 type Program = {
   id: string;
@@ -79,7 +80,7 @@ export default async function TypePage({
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>
-      <a
+      <Link
         href="/programs"
         style={{
           display: "inline-block",
@@ -90,7 +91,7 @@ export default async function TypePage({
         }}
       >
         ← Back to programs
-      </a>
+      </Link>
 
       <h1
         style={{
@@ -142,7 +143,7 @@ export default async function TypePage({
           }}
         >
           {programs.map((program) => (
-            <a
+            <Link
               key={program.id}
               href={program.slug ? `/programs/${program.slug}` : "#"}
               style={{
@@ -214,7 +215,7 @@ export default async function TypePage({
                   <strong>Deadline:</strong> {program.deadline || "—"}
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}

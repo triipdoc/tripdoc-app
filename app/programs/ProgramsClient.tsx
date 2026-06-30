@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -375,7 +376,7 @@ export default function ProgramsClient({
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 16px" }}>
       <div style={{ marginBottom: 10 }}>
         {showBackLink && (
-          <a
+          <Link
             href="/"
             style={{
               display: "inline-block",
@@ -386,7 +387,7 @@ export default function ProgramsClient({
             }}
           >
             ← Back to home
-          </a>
+          </Link>
         )}
 
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>
@@ -537,7 +538,7 @@ export default function ProgramsClient({
               flexWrap: "wrap",
             }}
           >
-            <a
+            <Link
               href="/programs"
               style={{
                 padding: "10px 14px",
@@ -550,9 +551,9 @@ export default function ProgramsClient({
               }}
             >
               View all opportunities
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/programs?q=Germany"
               style={{
                 padding: "10px 14px",
@@ -565,9 +566,9 @@ export default function ProgramsClient({
               }}
             >
               Try Germany
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/programs?q=scholarship"
               style={{
                 padding: "10px 14px",
@@ -580,7 +581,7 @@ export default function ProgramsClient({
               }}
             >
               Try scholarships
-            </a>
+            </Link>
           </div>
         </div>
       ) : (
@@ -614,7 +615,7 @@ export default function ProgramsClient({
                     overflow: "hidden",
                   }}
                 >
-                  <a
+                  <Link
                     href={`/programs/${p.slug}`}
                     style={{
                       textDecoration: "none",
@@ -636,7 +637,7 @@ export default function ProgramsClient({
                     >
                       {p.title}
                     </div>
-                  </a>
+                  </Link>
 
                   <div
                     style={{
@@ -664,7 +665,7 @@ export default function ProgramsClient({
                     <div>
                       <strong>Country:</strong>{" "}
                       {p.country ? (
-                        <a
+                        <Link
                           href={`/countries/${toCountrySlug(p.country)}`}
                           style={{
                             color: "#0070f3",
@@ -673,7 +674,7 @@ export default function ProgramsClient({
                           }}
                         >
                           {p.country}
-                        </a>
+                        </Link>
                       ) : (
                         "—"
                       )}
@@ -681,7 +682,7 @@ export default function ProgramsClient({
                     <div>
                       <strong>Type:</strong>{" "}
                       {p.type ? (
-                        <a
+                        <Link
                           href={`/types/${toTypeSlug(p.type)}`}
                           style={{
                             color: "#0070f3",
@@ -690,7 +691,7 @@ export default function ProgramsClient({
                           }}
                         >
                           {p.type}
-                        </a>
+                        </Link>
                       ) : (
                         "—"
                       )}
@@ -698,7 +699,7 @@ export default function ProgramsClient({
                     <div>
                       <strong>Funding:</strong>{" "}
                       {p.funding_type ? (
-                        <a
+                        <Link
                           href={`/funding/${toFundingSlug(p.funding_type)}`}
                           style={{
                             color: "#0070f3",
@@ -707,7 +708,7 @@ export default function ProgramsClient({
                           }}
                         >
                           {p.funding_type}
-                        </a>
+                        </Link>
                       ) : (
                         "—"
                       )}
@@ -726,7 +727,7 @@ export default function ProgramsClient({
                       alignItems: "stretch",
                     }}
                   >
-                    <a
+                    <Link
                       href={`/programs/${p.slug}`}
                       style={{
                         ...actionButtonStyle,
@@ -737,7 +738,7 @@ export default function ProgramsClient({
                       }}
                     >
                       View Details
-                    </a>
+                    </Link>
 
                     <button
                       type="button"
@@ -827,7 +828,7 @@ export default function ProgramsClient({
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {safeCurrentPage > 1 && (
-                <a
+                <Link
                   href={buildPageLink(safeCurrentPage - 1)}
                   style={{
                     padding: "10px 16px",
@@ -840,11 +841,11 @@ export default function ProgramsClient({
                   }}
                 >
                   ← Previous
-                </a>
+                </Link>
               )}
 
               {safeCurrentPage < safeTotalPages && (
-                <a
+                <Link
                   href={buildPageLink(safeCurrentPage + 1)}
                   style={{
                     padding: "10px 16px",
@@ -857,7 +858,7 @@ export default function ProgramsClient({
                   }}
                 >
                   Next →
-                </a>
+                </Link>
               )}
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type TrackedProgramLinkProps = {
@@ -43,7 +44,7 @@ export default function TrackedProgramLink({
   }
 
   return (
-    <a
+    <Link
       href={href}
       className={className}
       style={style}
@@ -54,17 +55,15 @@ export default function TrackedProgramLink({
           e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
 
         if (isModifiedClick) {
-          trackOpenDetail();
+          void trackOpenDetail();
           return;
         }
 
-        e.preventDefault();
         setIsNavigating(true);
-        await trackOpenDetail();
-        window.location.href = href;
+        void trackOpenDetail();
       }}
     >
       {children}
-    </a>
+    </Link>
   );
 }

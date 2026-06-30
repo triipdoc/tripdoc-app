@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import HeaderNav from "./components/HeaderNav";
 import Footer from "./components/Footer";
@@ -79,7 +80,7 @@ export default function RootLayout({
               flexWrap: "wrap",
             }}
           >
-            <a
+            <Link
               href="/"
               style={{
                 display: "flex",
@@ -102,7 +103,7 @@ export default function RootLayout({
                 }}
               />
               <span>TripDoc</span>
-            </a>
+            </Link>
 
             <HeaderNav />
           </div>

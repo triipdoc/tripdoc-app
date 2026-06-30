@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer
@@ -22,7 +24,7 @@ export default function Footer() {
         >
           {/* Brand */}
           <div style={{ maxWidth: 340 }}>
-            <a
+            <Link
               href="/"
               style={{
                 display: "inline-flex",
@@ -52,7 +54,7 @@ export default function Footer() {
               >
                 TripDoc
               </span>
-            </a>
+            </Link>
 
             <p
               style={{
@@ -99,21 +101,24 @@ export default function Footer() {
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <a href="/" style={footerLinkStyle}>
+                <Link href="/" style={footerLinkStyle}>
                   Home
-                </a>
-                <a href="/programs" style={footerLinkStyle}>
+                </Link>
+                <Link href="/programs" style={footerLinkStyle}>
                   All Opportunities
-                </a>
-                <a href="/types/scholarship" style={footerLinkStyle}>
+                </Link>
+                <Link href="/hiring-companies" style={footerLinkStyle}>
+                  Hiring Companies
+                </Link>
+                <Link href="/types/scholarship" style={footerLinkStyle}>
                   Scholarships
-                </a>
-                <a href="/types/internship" style={footerLinkStyle}>
+                </Link>
+                <Link href="/types/internship" style={footerLinkStyle}>
                   Internships
-                </a>
-                <a href="/types/fellowship" style={footerLinkStyle}>
+                </Link>
+                <Link href="/types/fellowship" style={footerLinkStyle}>
                   Fellowships
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -130,12 +135,12 @@ export default function Footer() {
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <a href="/about" style={footerLinkStyle}>
+                <Link href="/about" style={footerLinkStyle}>
                   About Us
-                </a>
-                <a href="/contact" style={footerLinkStyle}>
+                </Link>
+                <Link href="/contact" style={footerLinkStyle}>
                   Contact
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -152,15 +157,15 @@ export default function Footer() {
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <a href="/privacy" style={footerLinkStyle}>
+                <Link href="/privacy" style={footerLinkStyle}>
                   Privacy Policy
-                </a>
-                <a href="/terms" style={footerLinkStyle}>
+                </Link>
+                <Link href="/terms" style={footerLinkStyle}>
                   Terms & Conditions
-                </a>
-                <a href="/disclaimer" style={footerLinkStyle}>
+                </Link>
+                <Link href="/disclaimer" style={footerLinkStyle}>
                   Disclaimer
-                </a>
+                </Link>
               </div>
             </div>
           </div>

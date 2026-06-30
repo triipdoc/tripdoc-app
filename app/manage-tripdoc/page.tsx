@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -900,22 +901,39 @@ setFunding(normalizeFunding(program.funding_type || ""));
           </p>
         </div>
 
-        <button
-          onClick={async () => {
-            await fetch("/api/admin-logout", { method: "POST" });
-            window.location.href = "/manage-tripdoc/login";
-          }}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 8,
-            border: "1px solid #ddd",
-            background: "#fff",
-            cursor: "pointer",
-            fontWeight: 600,
-          }}
-        >
-          Logout
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link
+            href="/manage-tripdoc/hiring-companies"
+            style={{
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "#fff",
+              color: "#111",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            Hiring Companies
+          </Link>
+
+          <button
+            onClick={async () => {
+              await fetch("/api/admin-logout", { method: "POST" });
+              window.location.href = "/manage-tripdoc/login";
+            }}
+            style={{
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "#fff",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {notice && (

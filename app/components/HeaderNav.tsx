@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/programs", label: "All Opportunities" },
+  { href: "/hiring-companies", label: "Hiring Companies" },
   { href: "/types/scholarship", label: "Scholarships" },
   { href: "/types/internship", label: "Internships" },
   { href: "/types/fellowship", label: "Fellowships" },
@@ -29,7 +31,7 @@ export default function HeaderNav() {
             : pathname.startsWith(item.href);
 
         return (
-          <a
+          <Link
             key={item.href}
             href={item.href}
             style={{
@@ -44,7 +46,7 @@ export default function HeaderNav() {
             }}
           >
             {item.label}
-          </a>
+          </Link>
         );
       })}
     </nav>
