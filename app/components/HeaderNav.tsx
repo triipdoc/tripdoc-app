@@ -17,14 +17,15 @@ const opportunitiesItems = [
   { href: "/volunteer-screening", label: "Volunteer Screening" },
 ];
 
-const primaryItems = [
-  { href: "/", label: "Home" },
-  { href: "/hiring-companies", label: "Hiring Companies" },
-];
-
 function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getTopLevelNavClass(isActive: boolean, extraClass = "") {
+  return ["navItem", extraClass, isActive ? "active" : ""]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export default function HeaderNav() {
@@ -126,7 +127,7 @@ export default function HeaderNav() {
       <nav className="desktopNav" aria-label="Primary navigation">
         <Link
           href="/"
-          className={`navItem ${isActivePath(pathname, "/") ? "active" : ""}`}
+          className={getTopLevelNavClass(isActivePath(pathname, "/"))}
           onClick={closeMenus}
         >
           Home
@@ -136,9 +137,10 @@ export default function HeaderNav() {
           <button
             ref={desktopButtonRef}
             type="button"
-            className={`navItem navButton ${
-              isOpportunitiesActive || isDropdownOpen ? "active" : ""
-            }`}
+            className={getTopLevelNavClass(
+              isOpportunitiesActive || isDropdownOpen,
+              "navButton"
+            )}
             aria-expanded={isDropdownOpen}
             aria-haspopup="menu"
             aria-controls="opportunities-dropdown"
@@ -182,9 +184,9 @@ export default function HeaderNav() {
 
         <Link
           href="/hiring-companies"
-          className={`navItem ${
-            isActivePath(pathname, "/hiring-companies") ? "active" : ""
-          }`}
+          className={getTopLevelNavClass(
+            isActivePath(pathname, "/hiring-companies")
+          )}
           onClick={closeMenus}
         >
           Hiring Companies
@@ -297,15 +299,15 @@ export default function HeaderNav() {
           position: relative;
         }
 
-        .navItem {
+        .headerNavRoot :global(.navItem) {
           align-items: center;
-          background: rgba(255, 255, 255, 0.68);
+          background: transparent;
           border: 1px solid transparent;
           border-radius: 999px;
           color: #334155;
           display: inline-flex;
           font: inherit;
-          font-weight: 750;
+          font-weight: 700;
           gap: 8px;
           line-height: 1.2;
           padding: 10px 16px;
@@ -319,35 +321,36 @@ export default function HeaderNav() {
           white-space: nowrap;
         }
 
-        .navItem:hover,
-        .navItem:focus-visible {
+        .headerNavRoot :global(.navItem:hover),
+        .headerNavRoot :global(.navItem:focus-visible) {
           background: #eef5ff;
           border-color: #cfe0ff;
-          box-shadow: 0 8px 20px rgba(41, 82, 213, 0.08);
+          box-shadow: 0 6px 16px rgba(41, 82, 213, 0.07);
           color: #17307a;
           transform: translateY(-1px);
         }
 
-        .navItem:focus-visible,
-        .dropdownLink:focus-visible,
-        .mobileLink:focus-visible,
-        .mobileSubLink:focus-visible {
+        .headerNavRoot :global(.navItem:focus-visible),
+        .headerNavRoot :global(.dropdownLink:focus-visible),
+        .headerNavRoot :global(.mobileLink:focus-visible),
+        .headerNavRoot :global(.mobileSubLink:focus-visible) {
           outline: 2px solid #2952d5;
           outline-offset: 3px;
         }
 
-        .navButton {
+        .headerNavRoot :global(.navButton) {
           cursor: pointer;
         }
 
-        .active {
+        .headerNavRoot :global(.active) {
           background: #eaf2ff;
           border-color: #bdd3ff;
-          box-shadow: 0 8px 22px rgba(41, 82, 213, 0.1);
+          box-shadow: 0 6px 18px rgba(41, 82, 213, 0.08);
           color: #17307a;
+          font-weight: 800;
         }
 
-        .chevron {
+        .headerNavRoot :global(.chevron) {
           border-bottom: 2px solid currentColor;
           border-right: 2px solid currentColor;
           display: inline-block;
@@ -360,7 +363,7 @@ export default function HeaderNav() {
           width: 7px;
         }
 
-        .chevronOpen {
+        .headerNavRoot :global(.chevronOpen) {
           margin-top: 1px;
           transform: rotate(225deg) scale(0.92);
         }
@@ -380,7 +383,7 @@ export default function HeaderNav() {
           z-index: 250;
         }
 
-        .dropdownLink {
+        .headerNavRoot :global(.dropdownLink) {
           border-radius: 10px;
           color: #374151;
           font-size: 14px;
@@ -393,8 +396,8 @@ export default function HeaderNav() {
           white-space: nowrap;
         }
 
-        .dropdownLink:hover,
-        .activeDropdownLink {
+        .headerNavRoot :global(.dropdownLink:hover),
+        .headerNavRoot :global(.activeDropdownLink) {
           background: #eef5ff;
           color: #17307a;
         }
@@ -436,8 +439,8 @@ export default function HeaderNav() {
             width: min(100%, 360px);
           }
 
-          .mobileLink,
-          .mobileSubLink {
+          .headerNavRoot :global(.mobileLink),
+          .headerNavRoot :global(.mobileSubLink) {
             border-radius: 12px;
             color: #374151;
             font-weight: 700;
@@ -450,7 +453,7 @@ export default function HeaderNav() {
             width: 100%;
           }
 
-          .mobileSectionButton {
+          .headerNavRoot :global(.mobileSectionButton) {
             align-items: center;
             background: transparent;
             border: 0;
@@ -460,12 +463,13 @@ export default function HeaderNav() {
             justify-content: space-between;
           }
 
-          .mobileLink:hover,
-          .mobileSubLink:hover,
-          .activeMobileLink,
-          .activeMobileSubLink {
+          .headerNavRoot :global(.mobileLink:hover),
+          .headerNavRoot :global(.mobileSubLink:hover),
+          .headerNavRoot :global(.activeMobileLink),
+          .headerNavRoot :global(.activeMobileSubLink) {
             background: #eef5ff;
             color: #17307a;
+            font-weight: 800;
           }
 
           .mobileSubmenu {
@@ -476,7 +480,7 @@ export default function HeaderNav() {
             padding-left: 8px;
           }
 
-          .mobileSubLink {
+          .headerNavRoot :global(.mobileSubLink) {
             font-size: 14px;
             padding: 10px 12px;
           }

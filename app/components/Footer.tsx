@@ -96,10 +96,11 @@ export default function Footer() {
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 40,
-            flexWrap: "wrap",
+            alignItems: "start",
+            display: "grid",
+            gap: "40px 44px",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(min(100%, 170px), 1fr))",
             marginBottom: 28,
           }}
         >
@@ -161,14 +162,6 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Links */}
-          <div
-            style={{
-              display: "flex",
-              gap: 56,
-              flexWrap: "wrap",
-            }}
-          >
             <div>
               <div
                 style={{
@@ -288,7 +281,6 @@ export default function Footer() {
                 ))}
               </div>
             </div>
-          </div>
         </div>
 
         <div
@@ -308,6 +300,7 @@ export default function Footer() {
             Built for global opportunity seekers 🚀
           </span>
         </div>
+
       </div>
     </footer>
   );
