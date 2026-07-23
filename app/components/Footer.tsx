@@ -200,6 +200,9 @@ export default function Footer() {
                 <Link href="/types/fellowship" style={footerLinkStyle}>
                   Fellowships
                 </Link>
+                <Link href="/volunteer-screening" style={footerLinkStyle}>
+                  Volunteer Screening
+                </Link>
               </div>
             </div>
 

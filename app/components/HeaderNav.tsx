@@ -137,7 +137,7 @@ export default function HeaderNav() {
             ref={desktopButtonRef}
             type="button"
             className={`navItem navButton ${
-              isOpportunitiesActive ? "active" : ""
+              isOpportunitiesActive || isDropdownOpen ? "active" : ""
             }`}
             aria-expanded={isDropdownOpen}
             aria-haspopup="menu"
@@ -287,7 +287,7 @@ export default function HeaderNav() {
           align-items: center;
           display: flex;
           flex-wrap: wrap;
-          gap: 10px;
+          gap: 12px;
           justify-content: flex-end;
           max-width: 100%;
           min-width: 0;
@@ -299,26 +299,33 @@ export default function HeaderNav() {
 
         .navItem {
           align-items: center;
-          background: transparent;
+          background: rgba(255, 255, 255, 0.68);
           border: 1px solid transparent;
           border-radius: 999px;
-          color: #444;
+          color: #334155;
           display: inline-flex;
           font: inherit;
-          font-weight: 700;
+          font-weight: 750;
           gap: 8px;
           line-height: 1.2;
-          padding: 8px 12px;
+          padding: 10px 16px;
           text-decoration: none;
-          transition: all 0.2s ease;
+          transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease;
           white-space: nowrap;
         }
 
         .navItem:hover,
         .navItem:focus-visible {
-          background: #f8fbff;
-          border-color: #dbe7ff;
-          color: #111;
+          background: #eef5ff;
+          border-color: #cfe0ff;
+          box-shadow: 0 8px 20px rgba(41, 82, 213, 0.08);
+          color: #17307a;
+          transform: translateY(-1px);
         }
 
         .navItem:focus-visible,
@@ -334,9 +341,10 @@ export default function HeaderNav() {
         }
 
         .active {
-          background: #f2f6ff;
-          border-color: #dbe7ff;
-          color: #111;
+          background: #eaf2ff;
+          border-color: #bdd3ff;
+          box-shadow: 0 8px 22px rgba(41, 82, 213, 0.1);
+          color: #17307a;
         }
 
         .chevron {
@@ -346,45 +354,49 @@ export default function HeaderNav() {
           height: 7px;
           margin-top: -3px;
           transform: rotate(45deg);
-          transition: transform 0.2s ease;
+          transition:
+            margin-top 0.2s ease,
+            transform 0.2s ease;
           width: 7px;
         }
 
         .chevronOpen {
-          margin-top: 2px;
-          transform: rotate(225deg);
+          margin-top: 1px;
+          transform: rotate(225deg) scale(0.92);
         }
 
         .dropdownPanel {
           background: white;
           border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          box-shadow: 0 18px 45px rgba(16, 32, 51, 0.14);
+          border-radius: 14px;
+          box-shadow: 0 22px 55px rgba(16, 32, 51, 0.16);
           display: grid;
-          gap: 4px;
+          gap: 5px;
           min-width: 250px;
-          padding: 8px;
+          padding: 10px;
           position: absolute;
           right: 0;
-          top: calc(100% + 10px);
+          top: calc(100% + 12px);
           z-index: 250;
         }
 
         .dropdownLink {
-          border-radius: 8px;
+          border-radius: 10px;
           color: #374151;
           font-size: 14px;
           font-weight: 700;
-          padding: 11px 12px;
+          padding: 12px 13px;
           text-decoration: none;
-          transition: all 0.2s ease;
+          transition:
+            background-color 0.2s ease,
+            color 0.2s ease;
           white-space: nowrap;
         }
 
         .dropdownLink:hover,
         .activeDropdownLink {
-          background: #f2f6ff;
-          color: #111;
+          background: #eef5ff;
+          color: #17307a;
         }
 
         .mobileNav {
@@ -414,7 +426,7 @@ export default function HeaderNav() {
           .mobilePanel {
             background: white;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 14px;
             box-shadow: 0 14px 34px rgba(16, 32, 51, 0.12);
             display: grid;
             gap: 6px;
@@ -426,13 +438,15 @@ export default function HeaderNav() {
 
           .mobileLink,
           .mobileSubLink {
-            border-radius: 8px;
+            border-radius: 12px;
             color: #374151;
             font-weight: 700;
-            padding: 11px 12px;
+            padding: 12px 14px;
             text-align: left;
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition:
+              background-color 0.2s ease,
+              color 0.2s ease;
             width: 100%;
           }
 
@@ -450,8 +464,8 @@ export default function HeaderNav() {
           .mobileSubLink:hover,
           .activeMobileLink,
           .activeMobileSubLink {
-            background: #f2f6ff;
-            color: #111;
+            background: #eef5ff;
+            color: #17307a;
           }
 
           .mobileSubmenu {
