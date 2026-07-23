@@ -5,7 +5,7 @@ import Link from "next/link";
 import StickyApplyBar from "./StickyApplyBar";
 import ApplyNowButton from "./ApplyNowButton";
 import TrackedProgramLink from "../../components/TrackedProgramLink";
-import { socialLinks } from "../../components/socialLinks";
+import { socialLinkItems } from "../../components/socialLinks";
 
 const SITE_URL = "https://app.tripdoc.net";
 
@@ -809,13 +809,13 @@ export default async function ProgramDetailPage({
             reminders, and practical updates.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {socialLinks.map((item) => (
+            {socialLinkItems.map((item) => (
               <a
                 key={item.name}
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={item.ariaLabel}
+                aria-label={item.label}
                 style={{
                   border: "1px solid #dbe7ff",
                   borderRadius: 10,

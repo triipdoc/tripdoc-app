@@ -1,5 +1,85 @@
 import Link from "next/link";
-import { socialLinks } from "./socialLinks";
+import { socialLinkItems, type SocialIconName } from "./socialLinks";
+
+function SocialIcon({
+  icon,
+  name,
+}: {
+  icon: SocialIconName;
+  name: string;
+}) {
+  if (icon === "instagram") {
+    return (
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+      >
+        <rect
+          x="5"
+          y="5"
+          width="14"
+          height="14"
+          rx="4"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+        <circle cx="16.5" cy="7.5" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (icon === "youtube") {
+    return (
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="20"
+        height="20"
+        fill="none"
+      >
+        <rect
+          x="4"
+          y="7"
+          width="16"
+          height="10"
+          rx="3"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path d="M11 10l4 2-4 2v-4z" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (icon === "facebook") {
+    return (
+      <span aria-hidden="true" style={{ fontSize: 18, fontWeight: 900 }}>
+        f
+      </span>
+    );
+  }
+
+  if (icon === "x") {
+    return (
+      <span aria-hidden="true" style={{ fontSize: 14, fontWeight: 900 }}>
+        X
+      </span>
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      style={{ fontSize: 9, fontWeight: 900, lineHeight: 1 }}
+    >
+      {name}
+    </span>
+  );
+}
 
 export default function Footer() {
   return (
@@ -179,21 +259,28 @@ export default function Footer() {
                   fontSize: 15,
                 }}
               >
-                Follow
+                Follow TripDoc
               </div>
 
-              <div style={{ display: "grid", gap: 10 }}>
-                {socialLinks.map((item) => (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                {socialLinkItems.map((item) => (
                   <a
                     key={item.name}
                     href={item.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={item.ariaLabel}
-                    style={footerLinkStyle}
+                    aria-label={item.label}
+                    title={item.name}
+                    style={socialIconLinkStyle}
                   >
-                    {item.name}{" "}
-                    <span style={{ color: "#6b7280" }}>{item.handle}</span>
+                    <SocialIcon icon={item.icon} name={item.name} />
                   </a>
                 ))}
               </div>
@@ -227,4 +314,18 @@ const footerLinkStyle = {
   textDecoration: "none",
   color: "#374151",
   fontWeight: 500,
+};
+
+const socialIconLinkStyle = {
+  alignItems: "center",
+  background: "#f8fbff",
+  border: "1px solid #dbe7ff",
+  borderRadius: 999,
+  color: "#2952d5",
+  display: "inline-flex",
+  height: 38,
+  justifyContent: "center",
+  textDecoration: "none",
+  transition: "all 0.2s ease",
+  width: 38,
 };

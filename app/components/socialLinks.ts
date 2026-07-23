@@ -1,32 +1,41 @@
-export const socialLinks = [
-  {
+export const socialLinks = {
+  instagram: {
     name: "Instagram",
-    handle: "@triip_Doc",
-    href: "https://www.instagram.com/triip_Doc/",
-    ariaLabel: "Follow TripDoc on Instagram",
+    label: "Follow TripDoc on Instagram",
+    handle: "@triip_doc",
+    href: "https://www.instagram.com/triip_doc/",
+    icon: "instagram",
   },
-  {
+  tiktok: {
     name: "TikTok",
+    label: "Follow TripDoc on TikTok",
     handle: "@tripdocofficial",
     href: "https://www.tiktok.com/@tripdocofficial",
-    ariaLabel: "Follow TripDoc on TikTok",
+    icon: "tiktok",
   },
-  {
+  youtube: {
     name: "YouTube",
+    label: "Subscribe to TripDoc on YouTube",
     handle: "Trip_Doc",
     href: "https://www.youtube.com/@Trip_Doc",
-    ariaLabel: "Subscribe to TripDoc on YouTube",
+    icon: "youtube",
   },
-  {
+  facebook: {
     name: "Facebook",
+    label: "Follow TripDoc on Facebook",
     handle: "facebook.com/trippdoc",
     href: "https://www.facebook.com/trippdoc",
-    ariaLabel: "Follow TripDoc on Facebook",
+    icon: "facebook",
   },
-  {
+  x: {
     name: "X",
+    label: "Follow TripDoc on X",
     handle: "Triip_Doc",
     href: "https://x.com/Triip_Doc",
-    ariaLabel: "Follow TripDoc on X",
+    icon: "x",
   },
-] as const;
+} as const;
+
+export const socialLinkItems = Object.values(socialLinks);
+
+export type SocialIconName = (typeof socialLinkItems)[number]["icon"];

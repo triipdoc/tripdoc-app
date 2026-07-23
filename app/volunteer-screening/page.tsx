@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { socialLinks } from "../components/socialLinks";
+import { socialLinkItems } from "../components/socialLinks";
 
 const SITE_URL = "https://app.tripdoc.net";
 const TALLY_FORM_URL =
@@ -234,13 +234,13 @@ export default function VolunteerScreeningPage() {
             and application safety reminders.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            {socialLinks.map((item) => (
+            {socialLinkItems.map((item) => (
               <a
                 key={item.name}
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={item.ariaLabel}
+                aria-label={item.label}
                 className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold !text-[#2952d5] no-underline transition hover:border-blue-200 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2952d5]"
               >
                 {item.name}{" "}
