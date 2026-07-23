@@ -344,6 +344,11 @@ export default async function ProgramDetailPage({
 
   const programUrl = `${SITE_URL}/programs/${program.slug}`;
   const hasOfficialUrl = Boolean(program.official_url);
+  const isWeltwaertsSouthNorth =
+    program.slug === "weltwaerts-south-north-volunteer-germany";
+  const officialCtaLabel = isWeltwaertsSouthNorth
+    ? "Find your country’s official weltwärts organisation"
+    : "Apply Now";
 
   return (
     <main style={{ fontFamily: "Arial", background: "#fff" }}>
@@ -431,6 +436,26 @@ export default async function ProgramDetailPage({
 )}
           {program.deadline && <span>📅 Deadline: {program.deadline}</span>}
         </div>
+
+        {isWeltwaertsSouthNorth && (
+          <div
+            style={{
+              marginBottom: 24,
+              border: "1px solid #f0d38a",
+              borderRadius: 14,
+              padding: 18,
+              background: "#fff8e5",
+              color: "#654d08",
+              lineHeight: 1.7,
+              fontWeight: 650,
+            }}
+          >
+            <strong>Important:</strong> Applicants should not contact weltwärts
+            Germany directly. Applicants must use the official weltwärts
+            organisation finder to identify the correct sending organisation or
+            partner route for their home country.
+          </div>
+        )}
 
         {program.image_url && (
           <div
@@ -628,7 +653,26 @@ export default async function ProgramDetailPage({
             programId={program.id}
             title={program.title}
             officialUrl={program.official_url}
+            label={officialCtaLabel}
           />
+
+          {isWeltwaertsSouthNorth && (
+            <Link
+              href="/volunteer-screening"
+              style={{
+                padding: "14px 18px",
+                background: "white",
+                color: "#0070f3",
+                border: "1px solid #cfe3ff",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 700,
+              }}
+            >
+              Not sure if you are ready? Complete the TripDoc volunteer
+              pre-screening first.
+            </Link>
+          )}
 
           <CopyLinkButton
             programId={program.id}
@@ -816,7 +860,15 @@ export default async function ProgramDetailPage({
         )}
       </div>
 
-      <StickyApplyBar title={program.title} url={program.official_url} />
+      <StickyApplyBar
+        title={program.title}
+        url={program.official_url}
+        label={
+          isWeltwaertsSouthNorth
+            ? "Find official organisation"
+            : "Apply Now ↗"
+        }
+      />
     </main>
   );
 }

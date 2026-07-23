@@ -3,9 +3,11 @@
 export default function StickyApplyBar({
   title,
   url,
+  label = "Apply Now ↗",
 }: {
   title: string;
   url: string | null;
+  label?: string;
 }) {
   if (!url) return null;
 
@@ -80,7 +82,7 @@ export default function StickyApplyBar({
             flexShrink: 0,
           }}
         >
-          Apply Now ↗
+          {label}
         </a>
       </div>
     </div>

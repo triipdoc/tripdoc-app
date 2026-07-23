@@ -4,12 +4,14 @@ type ApplyNowButtonProps = {
   programId: string;
   title: string;
   officialUrl: string | null;
+  label?: string;
 };
 
 export default function ApplyNowButton({
   programId,
   title,
   officialUrl,
+  label = "Apply Now",
 }: ApplyNowButtonProps) {
   const isDisabled = !officialUrl;
 
@@ -67,7 +69,7 @@ export default function ApplyNowButton({
         display: "inline-block",
       }}
     >
-      Apply Now
+      {label}
     </a>
   );
 }
