@@ -5,6 +5,7 @@ import Link from "next/link";
 import StickyApplyBar from "./StickyApplyBar";
 import ApplyNowButton from "./ApplyNowButton";
 import TrackedProgramLink from "../../components/TrackedProgramLink";
+import { socialLinks } from "../../components/socialLinks";
 
 const SITE_URL = "https://app.tripdoc.net";
 
@@ -780,6 +781,55 @@ export default async function ProgramDetailPage({
             >
               🔍 TripDoc helps you discover opportunities, but final application details should always be verified on the source website.
             </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginBottom: 32,
+            border: "1px solid #e5e7eb",
+            borderRadius: 18,
+            padding: 22,
+            background: "#fff",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>
+            Follow TripDoc for verified opportunities
+          </h2>
+          <p
+            style={{
+              margin: "0 0 14px",
+              color: "#555",
+              lineHeight: 1.7,
+              fontSize: 15,
+            }}
+          >
+            Follow TripDoc for verified opportunities, application safety
+            reminders, and practical updates.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {socialLinks.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={item.ariaLabel}
+                style={{
+                  border: "1px solid #dbe7ff",
+                  borderRadius: 10,
+                  color: "#0070f3",
+                  background: "#f8fbff",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  padding: "10px 12px",
+                  textDecoration: "none",
+                }}
+              >
+                {item.name}
+              </a>
+            ))}
           </div>
         </div>
 

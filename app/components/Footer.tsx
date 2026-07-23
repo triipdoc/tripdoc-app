@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { socialLinks } from "./socialLinks";
 
 export default function Footer() {
   return (
@@ -166,6 +167,35 @@ export default function Footer() {
                 <Link href="/disclaimer" style={footerLinkStyle}>
                   Disclaimer
                 </Link>
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontWeight: 800,
+                  marginBottom: 12,
+                  color: "#111",
+                  fontSize: 15,
+                }}
+              >
+                Follow
+              </div>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                {socialLinks.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={item.ariaLabel}
+                    style={footerLinkStyle}
+                  >
+                    {item.name}{" "}
+                    <span style={{ color: "#6b7280" }}>{item.handle}</span>
+                  </a>
+                ))}
               </div>
             </div>
           </div>

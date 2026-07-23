@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { socialLinks } from "../components/socialLinks";
 
 const SITE_URL = "https://app.tripdoc.net";
 const TALLY_FORM_URL =
@@ -223,6 +224,31 @@ export default function VolunteerScreeningPage() {
             Do not pay anyone promising guaranteed Europe volunteer visa.
           </p>
         </div>
+
+        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-[0_10px_28px_rgba(16,32,51,0.07)] sm:p-6">
+          <h2 className="text-lg font-black text-[#102033]">
+            Follow TripDoc for verified opportunities
+          </h2>
+          <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+            Get practical updates on verified opportunities, volunteer routes,
+            and application safety reminders.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {socialLinks.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={item.ariaLabel}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold !text-[#2952d5] no-underline transition hover:border-blue-200 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2952d5]"
+              >
+                {item.name}{" "}
+                <span className="text-slate-500">{item.handle}</span>
+              </a>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
