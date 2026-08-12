@@ -508,6 +508,9 @@ export default function HiringCompaniesAdminPage() {
           <Link href="/manage-tripdoc" style={secondaryButtonStyle}>
             Program Admin
           </Link>
+          <Link href="/manage-tripdoc/hiring-jobs" style={secondaryButtonStyle}>
+            Hiring Jobs
+          </Link>
           <Link
             href="/hiring-companies"
             target="_blank"

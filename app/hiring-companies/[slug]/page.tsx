@@ -2,6 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
+import {
+  cleanText,
+  formatDisplayDate,
+  formatSalary,
+  getSponsorshipLabel,
+  getTodayDateString,
+  PUBLIC_SPONSORSHIP_STATUSES,
+  sortPublicJobs,
+  type HiringCompanyJob,
+} from "../../../lib/hiringCompanyJobs";
 import { supabase } from "../../../lib/supabase";
 
 const SITE_URL = "https://app.tripdoc.net";
@@ -96,6 +106,29 @@ async function getVerifiedCompany(slug: string) {
   return (data as HiringCompany | null) || null;
 }
 
+async function getCurrentVerifiedJobs(companyId: string) {
+  const today = getTodayDateString();
+
+  const { data, error } = await supabase
+    .from("hiring_company_jobs")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("is_active", true)
+    .eq("verification_status", "verified")
+    .in("visa_sponsorship_status", PUBLIC_SPONSORSHIP_STATUSES)
+    .or(`deadline.is.null,deadline.gte.${today}`)
+    .order("is_featured", { ascending: false })
+    .order("deadline", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Hiring company detail jobs error:", error.message);
+    return [];
+  }
+
+  return sortPublicJobs((data || []) as HiringCompanyJob[]);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -156,6 +189,8 @@ export default async function HiringCompanyDetailPage({
   if (!company) {
     notFound();
   }
+
+  const currentJobs = await getCurrentVerifiedJobs(company.id);
 
   const description =
     cleanValue(company.description) ||
@@ -311,6 +346,85 @@ export default async function HiringCompanyDetailPage({
                   <p style={styles.noteText}>{verificationNotes}</p>
                 </div>
               ) : null}
+            </section>
+
+            <section style={styles.card}>
+              <h2 style={styles.sectionTitle}>Current Verified Jobs</h2>
+
+              {currentJobs.length === 0 ? (
+                <p style={styles.emptyJobsText}>
+                  No individually verified open jobs are currently listed by
+                  TripDoc for this company. Check the official careers page for
+                  additional vacancies.
+                </p>
+              ) : (
+                <div style={styles.jobList}>
+                  {currentJobs.map((job) => {
+                    const location =
+                      cleanText(job.location) ||
+                      [cleanText(job.city), cleanText(job.country)]
+                        .filter(Boolean)
+                        .join(", ");
+                    const salary = formatSalary(job);
+                    const deadline = formatDisplayDate(job.deadline);
+                    const lastVerified = formatDisplayDate(job.last_verified);
+                    const jobUrl = `/hiring-companies/${encodeURIComponent(
+                      company.slug
+                    )}/jobs/${encodeURIComponent(job.slug)}`;
+
+                    return (
+                      <article key={job.id} style={styles.jobCard}>
+                        <div>
+                          <h3 style={styles.jobTitle}>{job.title}</h3>
+                          <p style={styles.jobMeta}>
+                            {[location, cleanText(job.employment_type)]
+                              .filter(Boolean)
+                              .join(" / ") || "Location not listed"}
+                          </p>
+                        </div>
+
+                        <div style={styles.jobDetailGrid}>
+                          {salary ? (
+                            <div style={styles.jobDetailItem}>
+                              <span style={styles.detailLabel}>Salary</span>
+                              <strong style={styles.detailValue}>{salary}</strong>
+                            </div>
+                          ) : null}
+
+                          {deadline ? (
+                            <div style={styles.jobDetailItem}>
+                              <span style={styles.detailLabel}>Deadline</span>
+                              <strong style={styles.detailValue}>
+                                {deadline}
+                              </strong>
+                            </div>
+                          ) : null}
+
+                          {lastVerified ? (
+                            <div style={styles.jobDetailItem}>
+                              <span style={styles.detailLabel}>
+                                Last verified
+                              </span>
+                              <strong style={styles.detailValue}>
+                                {lastVerified}
+                              </strong>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div style={styles.jobFooter}>
+                          <span style={styles.jobBadge}>
+                            {getSponsorshipLabel(job.visa_sponsorship_status)}
+                          </span>
+                          <Link href={jobUrl} style={styles.inlineLink}>
+                            View job
+                          </Link>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
 
@@ -638,6 +752,69 @@ const styles = {
     lineHeight: 1.65,
     margin: "8px 0 0",
     whiteSpace: "pre-line",
+  },
+  emptyJobsText: {
+    color: "#405166",
+    fontSize: 15,
+    lineHeight: 1.65,
+    margin: 0,
+  },
+  jobList: {
+    display: "grid",
+    gap: 14,
+  },
+  jobCard: {
+    background: "#f8fbff",
+    border: "1px solid #dce6f5",
+    borderRadius: 8,
+    display: "grid",
+    gap: 14,
+    padding: 16,
+  },
+  jobTitle: {
+    color: "#102033",
+    fontSize: 18,
+    fontWeight: 850,
+    lineHeight: 1.25,
+    margin: 0,
+  },
+  jobMeta: {
+    color: "#5b6b7e",
+    fontSize: 14,
+    fontWeight: 650,
+    lineHeight: 1.45,
+    margin: "7px 0 0",
+  },
+  jobDetailGrid: {
+    display: "grid",
+    gap: 10,
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+  },
+  jobDetailItem: {
+    background: "white",
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    display: "grid",
+    gap: 5,
+    padding: 12,
+  },
+  jobFooter: {
+    alignItems: "center",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "space-between",
+  },
+  jobBadge: {
+    background: "#eef5ff",
+    border: "1px solid #d6e7ff",
+    borderRadius: 999,
+    color: "#1745aa",
+    display: "inline-flex",
+    fontSize: 12,
+    fontWeight: 850,
+    lineHeight: 1.2,
+    padding: "7px 10px",
   },
   snapshotGrid: {
     display: "grid",

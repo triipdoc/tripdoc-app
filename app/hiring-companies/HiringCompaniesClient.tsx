@@ -2,6 +2,17 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import {
+  cleanText,
+  formatDisplayDate,
+  formatSalary,
+  getSponsorshipLabel,
+  isConfirmedSponsorshipStatus,
+  isPublicActiveJob,
+  sortPublicJobs,
+  type HiringCompanyJob,
+  type SponsorshipStatus,
+} from "../../lib/hiringCompanyJobs";
 
 export type HiringCompany = {
   id: string;
@@ -30,9 +41,13 @@ type HiringSupportFilter =
   | "relocation_support"
   | "graduate_program";
 
+type ActiveView = "companies" | "jobs";
+
 type HiringCompaniesClientProps = {
   initialCompanies: HiringCompany[];
+  initialJobs: HiringCompanyJob[];
   errorMessage?: string;
+  jobsErrorMessage?: string;
 };
 
 const supportFilters: { label: string; value: HiringSupportFilter }[] = [
@@ -40,6 +55,14 @@ const supportFilters: { label: string; value: HiringSupportFilter }[] = [
   { label: "Visa sponsorship signal", value: "visa_sponsorship" },
   { label: "Relocation support signal", value: "relocation_support" },
   { label: "Graduate program", value: "graduate_program" },
+];
+
+const sponsorshipFilters: { label: string; value: "all" | SponsorshipStatus }[] = [
+  { label: "All sponsorship signals", value: "all" },
+  { label: "Explicit sponsorship", value: "explicit" },
+  { label: "Work-permit support", value: "work_permit_support" },
+  { label: "Conditional sponsorship", value: "conditional" },
+  { label: "Approved sponsor only", value: "approved_sponsor_only" },
 ];
 
 function cleanValue(value?: string | null) {
@@ -77,25 +100,56 @@ function getBadges(company: HiringCompany) {
 }
 
 function formatVerifiedDate(value?: string | null) {
-  if (!value) return "";
+  return formatDisplayDate(value);
+}
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+function getJobCompany(job: HiringCompanyJob) {
+  return job.company || null;
+}
 
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+function getJobCompanyName(job: HiringCompanyJob) {
+  return getJobCompany(job)?.company_name || "Hiring company";
+}
+
+function getJobCompanySlug(job: HiringCompanyJob) {
+  return getJobCompany(job)?.slug || "";
+}
+
+function getJobLocation(job: HiringCompanyJob) {
+  const location = cleanText(job.location);
+  if (location) return location;
+
+  return [cleanText(job.city), cleanText(job.country)].filter(Boolean).join(", ");
+}
+
+function getJobUrl(job: HiringCompanyJob) {
+  const companySlug = getJobCompanySlug(job);
+
+  return companySlug
+    ? `/hiring-companies/${encodeURIComponent(companySlug)}/jobs/${encodeURIComponent(
+        job.slug
+      )}`
+    : "/hiring-companies";
 }
 
 export default function HiringCompaniesClient({
   initialCompanies,
+  initialJobs,
   errorMessage = "",
+  jobsErrorMessage = "",
 }: HiringCompaniesClientProps) {
+  const [activeView, setActiveView] = useState<ActiveView>("companies");
   const [countryFilter, setCountryFilter] = useState("all");
   const [industryFilter, setIndustryFilter] = useState("all");
   const [supportFilter, setSupportFilter] = useState<HiringSupportFilter>("all");
+  const [jobCountryFilter, setJobCountryFilter] = useState("all");
+  const [jobCompanyFilter, setJobCompanyFilter] = useState("all");
+  const [jobSearch, setJobSearch] = useState("");
+  const [sponsorshipFilter, setSponsorshipFilter] = useState<
+    "all" | SponsorshipStatus
+  >("all");
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState("all");
+  const [workModeFilter, setWorkModeFilter] = useState("all");
 
   const countries = useMemo(
     () => getUniqueOptions(initialCompanies, "country"),
@@ -105,6 +159,60 @@ export default function HiringCompaniesClient({
     () => getUniqueOptions(initialCompanies, "industry"),
     [initialCompanies]
   );
+  const activeJobs = useMemo(
+    () => sortPublicJobs(initialJobs.filter(isPublicActiveJob)),
+    [initialJobs]
+  );
+  const jobCountsByCompany = useMemo(() => {
+    const counts = new Map<
+      string,
+      { total: number; confirmedSponsorship: number }
+    >();
+
+    activeJobs.forEach((job) => {
+      const current = counts.get(job.company_id) || {
+        total: 0,
+        confirmedSponsorship: 0,
+      };
+
+      current.total += 1;
+
+      if (isConfirmedSponsorshipStatus(job.visa_sponsorship_status)) {
+        current.confirmedSponsorship += 1;
+      }
+
+      counts.set(job.company_id, current);
+    });
+
+    return counts;
+  }, [activeJobs]);
+  const jobCountries = useMemo(() => {
+    return Array.from(
+      new Set(activeJobs.map((job) => cleanText(job.country)).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+  }, [activeJobs]);
+  const jobCompanies = useMemo(() => {
+    return Array.from(
+      new Map(
+        activeJobs
+          .map((job) => getJobCompany(job))
+          .filter(Boolean)
+          .map((company) => [company!.id, company!] as const)
+      ).values()
+    ).sort((a, b) => a.company_name.localeCompare(b.company_name));
+  }, [activeJobs]);
+  const employmentTypes = useMemo(() => {
+    return Array.from(
+      new Set(
+        activeJobs.map((job) => cleanText(job.employment_type)).filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [activeJobs]);
+  const workModes = useMemo(() => {
+    return Array.from(
+      new Set(activeJobs.map((job) => cleanText(job.work_mode)).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+  }, [activeJobs]);
 
   const filteredCompanies = useMemo(() => {
     return initialCompanies.filter((company) => {
@@ -118,6 +226,56 @@ export default function HiringCompaniesClient({
       return matchesCountry && matchesIndustry && matchesSupport;
     });
   }, [initialCompanies, countryFilter, industryFilter, supportFilter]);
+
+  const filteredJobs = useMemo(() => {
+    const searchTerm = jobSearch.trim().toLowerCase();
+
+    return activeJobs.filter((job) => {
+      const company = getJobCompany(job);
+      const searchable = [
+        job.title,
+        company?.company_name,
+        job.country,
+        job.city,
+        job.location,
+        job.employment_type,
+        job.work_mode,
+      ]
+        .map((value) => cleanText(value).toLowerCase())
+        .join(" ");
+
+      const matchesCountry =
+        jobCountryFilter === "all" || cleanText(job.country) === jobCountryFilter;
+      const matchesCompany =
+        jobCompanyFilter === "all" || job.company_id === jobCompanyFilter;
+      const matchesSearch = !searchTerm || searchable.includes(searchTerm);
+      const matchesSponsorship =
+        sponsorshipFilter === "all" ||
+        job.visa_sponsorship_status === sponsorshipFilter;
+      const matchesEmploymentType =
+        employmentTypeFilter === "all" ||
+        cleanText(job.employment_type) === employmentTypeFilter;
+      const matchesWorkMode =
+        workModeFilter === "all" || cleanText(job.work_mode) === workModeFilter;
+
+      return (
+        matchesCountry &&
+        matchesCompany &&
+        matchesSearch &&
+        matchesSponsorship &&
+        matchesEmploymentType &&
+        matchesWorkMode
+      );
+    });
+  }, [
+    activeJobs,
+    employmentTypeFilter,
+    jobCompanyFilter,
+    jobCountryFilter,
+    jobSearch,
+    sponsorshipFilter,
+    workModeFilter,
+  ]);
 
   return (
     <main className="pageShell">
@@ -150,6 +308,25 @@ export default function HiringCompaniesClient({
           </div>
         </div>
 
+        <div className="viewSwitcher" aria-label="Hiring companies view">
+          <button
+            type="button"
+            className={activeView === "companies" ? "active" : ""}
+            onClick={() => setActiveView("companies")}
+          >
+            Companies
+          </button>
+          <button
+            type="button"
+            className={activeView === "jobs" ? "active" : ""}
+            onClick={() => setActiveView("jobs")}
+          >
+            Verified Jobs
+          </button>
+        </div>
+
+        {activeView === "companies" ? (
+          <>
         <div className="filterPanel" aria-label="Hiring company filters">
           <div className="selectGrid">
             <label>
@@ -236,6 +413,7 @@ export default function HiringCompaniesClient({
                 "Visit the official company career page to review current roles, eligibility, and hiring support details.";
               const verifiedDate = formatVerifiedDate(company.last_verified_at);
               const verificationNote = cleanValue(company.verification_notes);
+              const jobCount = jobCountsByCompany.get(company.id);
               const detailUrl = `/hiring-companies/${encodeURIComponent(
                 company.slug
               )}`;
@@ -274,6 +452,16 @@ export default function HiringCompaniesClient({
                       ))}
                     </div>
                   ) : null}
+
+                  <div className="jobCountBox">
+                    <strong>Verified open jobs: {jobCount?.total || 0}</strong>
+                    {jobCount?.confirmedSponsorship ? (
+                      <span>
+                        {jobCount.confirmedSponsorship} verified sponsorship job
+                        {jobCount.confirmedSponsorship === 1 ? "" : "s"}
+                      </span>
+                    ) : null}
+                  </div>
 
                   {(company.source_url || verifiedDate || verificationNote) && (
                     <div className="verificationBox">
@@ -321,6 +509,201 @@ export default function HiringCompaniesClient({
               );
             })}
           </div>
+        )}
+          </>
+        ) : (
+          <>
+            <div className="filterPanel" aria-label="Verified job filters">
+              <div className="selectGrid jobSelectGrid">
+                <label>
+                  Search jobs
+                  <input
+                    value={jobSearch}
+                    onChange={(event) => setJobSearch(event.target.value)}
+                    placeholder="Search by job title, company, or location"
+                  />
+                </label>
+
+                <label>
+                  Country
+                  <select
+                    value={jobCountryFilter}
+                    onChange={(event) => setJobCountryFilter(event.target.value)}
+                  >
+                    <option value="all">All countries</option>
+                    {jobCountries.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Company
+                  <select
+                    value={jobCompanyFilter}
+                    onChange={(event) => setJobCompanyFilter(event.target.value)}
+                  >
+                    <option value="all">All companies</option>
+                    {jobCompanies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.company_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Sponsorship status
+                  <select
+                    value={sponsorshipFilter}
+                    onChange={(event) =>
+                      setSponsorshipFilter(
+                        event.target.value as "all" | SponsorshipStatus
+                      )
+                    }
+                  >
+                    {sponsorshipFilters.map((filter) => (
+                      <option key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Employment type
+                  <select
+                    value={employmentTypeFilter}
+                    onChange={(event) =>
+                      setEmploymentTypeFilter(event.target.value)
+                    }
+                  >
+                    <option value="all">All employment types</option>
+                    {employmentTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Work mode
+                  <select
+                    value={workModeFilter}
+                    onChange={(event) => setWorkModeFilter(event.target.value)}
+                  >
+                    <option value="all">All work modes</option>
+                    {workModes.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {mode}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="resultsHeader">
+              <p>
+                Showing <strong>{filteredJobs.length}</strong> of{" "}
+                <strong>{activeJobs.length}</strong> verified open jobs
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setJobCountryFilter("all");
+                  setJobCompanyFilter("all");
+                  setJobSearch("");
+                  setSponsorshipFilter("all");
+                  setEmploymentTypeFilter("all");
+                  setWorkModeFilter("all");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+
+            <p className="disclaimer">
+              Important: TripDoc verifies job records against official sources,
+              but users must confirm the role is still open, sponsorship wording,
+              eligibility, salary, and relocation or work-permit support directly
+              with the official employer page before applying.
+            </p>
+
+            {jobsErrorMessage ? (
+              <div className="state">{jobsErrorMessage}</div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="state">
+                No verified open jobs match these filters yet.
+              </div>
+            ) : (
+              <div className="jobGrid">
+                {filteredJobs.map((job) => {
+                  const companyName = getJobCompanyName(job);
+                  const location = getJobLocation(job);
+                  const salary = formatSalary(job);
+                  const deadline = formatDisplayDate(job.deadline);
+                  const lastVerified = formatDisplayDate(job.last_verified);
+                  const sponsorshipLabel = getSponsorshipLabel(
+                    job.visa_sponsorship_status
+                  );
+
+                  return (
+                    <article className="jobCard" key={job.id}>
+                      <div>
+                        <p className="jobCompany">{companyName}</p>
+                        <h2>{job.title}</h2>
+                        <p className="jobMeta">
+                          {[location, cleanText(job.employment_type)]
+                            .filter(Boolean)
+                            .join(" / ") || cleanText(job.country)}
+                        </p>
+                      </div>
+
+                      <div className="jobInfoGrid">
+                        <div>
+                          <span>Salary</span>
+                          <strong>{salary || "Salary not stated"}</strong>
+                        </div>
+
+                        {deadline ? (
+                          <div>
+                            <span>Deadline</span>
+                            <strong>{deadline}</strong>
+                          </div>
+                        ) : null}
+
+                        {lastVerified ? (
+                          <div>
+                            <span>Last verified</span>
+                            <strong>{lastVerified}</strong>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="badges" aria-label="Job verification badges">
+                        <span
+                          className={`sponsorshipBadge ${
+                            job.visa_sponsorship_status || "unclear"
+                          }`}
+                        >
+                          {sponsorshipLabel}
+                        </span>
+                        <span>Verified</span>
+                      </div>
+
+                      <Link className="detailsLink" href={getJobUrl(job)}>
+                        View job
+                      </Link>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -411,6 +794,40 @@ export default function HiringCompaniesClient({
           margin-top: 8px;
         }
 
+        .viewSwitcher {
+          background: white;
+          border: 1px solid #dce6f5;
+          border-radius: 999px;
+          display: flex;
+          gap: 6px;
+          margin: 28px auto 0;
+          max-width: 360px;
+          padding: 6px;
+        }
+
+        .viewSwitcher button {
+          background: transparent;
+          border: 0;
+          border-radius: 999px;
+          color: #526174;
+          cursor: pointer;
+          flex: 1;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 850;
+          min-height: 42px;
+          padding: 0 16px;
+          transition:
+            background 160ms ease,
+            color 160ms ease;
+        }
+
+        .viewSwitcher button:hover,
+        .viewSwitcher button.active {
+          background: #eef5ff;
+          color: #1745aa;
+        }
+
         .filterPanel {
           background: white;
           border: 1px solid #e5e7eb;
@@ -428,6 +845,10 @@ export default function HiringCompaniesClient({
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .jobSelectGrid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         label,
         .supportFilter > span {
           color: #26384d;
@@ -437,22 +858,28 @@ export default function HiringCompaniesClient({
           gap: 8px;
         }
 
+        input,
         select {
           appearance: none;
-          background:
-            linear-gradient(45deg, transparent 50%, #526174 50%) calc(100% - 18px)
-              50% / 7px 7px no-repeat,
-            linear-gradient(135deg, #526174 50%, transparent 50%) calc(100% - 13px)
-              50% / 7px 7px no-repeat,
-            #f9fbff;
+          background: #f9fbff;
           border: 1px solid #cfdced;
           border-radius: 8px;
           color: #13263b;
           font: inherit;
           font-weight: 650;
           min-height: 48px;
-          padding: 0 42px 0 14px;
+          padding: 0 14px;
           width: 100%;
+        }
+
+        select {
+          background:
+            linear-gradient(45deg, transparent 50%, #526174 50%) calc(100% - 18px)
+              50% / 7px 7px no-repeat,
+            linear-gradient(135deg, #526174 50%, transparent 50%) calc(100% - 13px)
+              50% / 7px 7px no-repeat,
+            #f9fbff;
+          padding: 0 42px 0 14px;
         }
 
         .supportButtons {
@@ -626,6 +1053,28 @@ export default function HiringCompaniesClient({
           padding: 7px 10px;
         }
 
+        .jobCountBox {
+          background: #f8fbff;
+          border: 1px solid #dce6f5;
+          border-radius: 8px;
+          color: #405166;
+          display: grid;
+          gap: 6px;
+          font-size: 13px;
+          margin: 0 0 16px;
+          padding: 12px;
+        }
+
+        .jobCountBox strong {
+          color: #102033;
+          font-weight: 900;
+        }
+
+        .jobCountBox span {
+          color: #1745aa;
+          font-weight: 850;
+        }
+
         .verificationBox {
           background: #f8fbff;
           border: 1px solid #dce6f5;
@@ -698,6 +1147,92 @@ export default function HiringCompaniesClient({
           color: #66768a;
         }
 
+        .jobGrid {
+          display: grid;
+          gap: 18px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .jobCard {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          box-shadow: 0 10px 28px rgba(16, 32, 51, 0.07);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding: 22px;
+        }
+
+        .jobCompany {
+          color: #2952d5;
+          font-size: 13px;
+          font-weight: 900;
+          margin: 0 0 8px;
+          text-transform: uppercase;
+        }
+
+        .jobMeta {
+          color: #5b6b7e;
+          font-size: 14px;
+          font-weight: 650;
+          line-height: 1.4;
+          margin: 8px 0 0;
+        }
+
+        .jobInfoGrid {
+          display: grid;
+          gap: 10px;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        .jobInfoGrid div {
+          background: #f8fbff;
+          border: 1px solid #dce6f5;
+          border-radius: 8px;
+          display: grid;
+          gap: 5px;
+          padding: 12px;
+        }
+
+        .jobInfoGrid span {
+          color: #5b6b7e;
+          font-size: 12px;
+          font-weight: 850;
+          text-transform: uppercase;
+        }
+
+        .jobInfoGrid strong {
+          color: #102033;
+          font-size: 14px;
+          font-weight: 850;
+          overflow-wrap: anywhere;
+        }
+
+        .sponsorshipBadge.explicit {
+          background: #edf8f0;
+          border-color: #b7dfc2;
+          color: #1f6b37;
+        }
+
+        .sponsorshipBadge.work_permit_support {
+          background: #eef5ff;
+          border-color: #c8dbff;
+          color: #1745aa;
+        }
+
+        .sponsorshipBadge.conditional {
+          background: #fff7e6;
+          border-color: #f3d29b;
+          color: #8a5a00;
+        }
+
+        .sponsorshipBadge.approved_sponsor_only {
+          background: #f1f5f9;
+          border-color: #d7dee8;
+          color: #475569;
+        }
+
         .state {
           background: white;
           border: 1px solid #e2e8f0;
@@ -715,11 +1250,13 @@ export default function HiringCompaniesClient({
           }
 
           .statsGrid,
-          .companyGrid {
+          .companyGrid,
+          .jobGrid {
             grid-template-columns: 1fr;
           }
 
-          .selectGrid {
+          .selectGrid,
+          .jobSelectGrid {
             grid-template-columns: 1fr;
           }
 

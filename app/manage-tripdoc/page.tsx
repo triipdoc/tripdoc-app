@@ -917,6 +917,21 @@ setFunding(normalizeFunding(program.funding_type || ""));
             Hiring Companies
           </Link>
 
+          <Link
+            href="/manage-tripdoc/hiring-jobs"
+            style={{
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "#fff",
+              color: "#111",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            Hiring Jobs
+          </Link>
+
           <button
             onClick={async () => {
               await fetch("/api/admin-logout", { method: "POST" });
