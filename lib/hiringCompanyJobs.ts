@@ -133,7 +133,11 @@ export function isPastDeadline(deadline?: string | null) {
 
 export function isPublicActiveJob(job: Pick<
   HiringCompanyJob,
-  "is_active" | "verification_status" | "deadline" | "visa_sponsorship_status"
+  | "is_active"
+  | "verification_status"
+  | "deadline"
+  | "last_verified"
+  | "visa_sponsorship_status"
 >) {
   const status = job.visa_sponsorship_status;
 
@@ -141,8 +145,43 @@ export function isPublicActiveJob(job: Pick<
     job.is_active !== false &&
     job.verification_status === "verified" &&
     Boolean(status && PUBLIC_SPONSORSHIP_STATUSES.includes(status)) &&
+    Boolean(cleanText(job.last_verified)) &&
     !isPastDeadline(job.deadline)
   );
+}
+
+export function getPublicJobBlockers(job: Pick<
+  HiringCompanyJob,
+  | "is_active"
+  | "verification_status"
+  | "deadline"
+  | "last_verified"
+  | "visa_sponsorship_status"
+>) {
+  const blockers: string[] = [];
+  const status = job.visa_sponsorship_status;
+
+  if (job.verification_status !== "verified") {
+    blockers.push(`status is ${job.verification_status || "draft"}`);
+  }
+
+  if (job.is_active === false) {
+    blockers.push("job is inactive");
+  }
+
+  if (!status || !PUBLIC_SPONSORSHIP_STATUSES.includes(status)) {
+    blockers.push("sponsorship status is not public-ready");
+  }
+
+  if (!cleanText(job.last_verified)) {
+    blockers.push("last verified date is missing");
+  }
+
+  if (isPastDeadline(job.deadline)) {
+    blockers.push("deadline has passed");
+  }
+
+  return blockers;
 }
 
 export function getSponsorshipLabel(status?: string | null) {

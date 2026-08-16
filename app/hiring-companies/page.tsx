@@ -39,6 +39,7 @@ export default async function HiringCompaniesPage() {
     .eq("is_active", true)
     .eq("verification_status", "verified")
     .in("visa_sponsorship_status", PUBLIC_SPONSORSHIP_STATUSES)
+    .not("last_verified", "is", null)
     .or(`deadline.is.null,deadline.gte.${today}`)
     .order("is_featured", { ascending: false })
     .order("deadline", { ascending: true, nullsFirst: false })

@@ -6,6 +6,7 @@ import {
   formatDisplayDate,
   formatSalary,
   generateSlug,
+  getPublicJobBlockers,
   getSponsorshipLabel,
   JOB_VERIFICATION_STATUSES,
   SPONSORSHIP_STATUSES,
@@ -883,7 +884,9 @@ export default function HiringJobsAdminPage() {
             const badgeStyle = statusBadgeStyle(job.verification_status);
             const salary = formatSalary(job);
             const companySlug = job.company?.slug;
-            const publicJobUrl = companySlug
+            const publicBlockers = getPublicJobBlockers(job);
+            const isPublicReady = publicBlockers.length === 0;
+            const publicJobUrl = companySlug && isPublicReady
               ? `/hiring-companies/${companySlug}/jobs/${job.slug}`
               : "";
 
@@ -937,6 +940,12 @@ export default function HiringJobsAdminPage() {
                 )}
                 {job.description && (
                   <p style={{ color: "#444", lineHeight: 1.6 }}>{job.description}</p>
+                )}
+
+                {companySlug && !isPublicReady && (
+                  <div style={warningBoxStyle}>
+                    Public page not available yet: {publicBlockers.join("; ")}.
+                  </div>
                 )}
 
                 <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
