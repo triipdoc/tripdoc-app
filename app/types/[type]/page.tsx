@@ -62,6 +62,11 @@ export default async function TypePage({
 }) {
   const { type } = await params;
   const formattedType = formatTypeName(type);
+  const normalizedType = decodeURIComponent(type).toLowerCase().trim();
+  const isVolunteerType =
+    normalizedType === "volunteer" ||
+    normalizedType === "volunteering" ||
+    formattedType.toLowerCase().includes("volunteer");
 
   const { data, error } = await supabase
     .from("programs")
@@ -118,6 +123,66 @@ export default async function TypePage({
       >
         {programs.length} opportunit{programs.length === 1 ? "y" : "ies"} found
       </div>
+
+      {isVolunteerType ? (
+        <div
+          style={{
+            marginBottom: 24,
+            border: "1px solid rgba(41,82,213,0.18)",
+            borderRadius: 18,
+            padding: "20px 18px",
+            background:
+              "linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%)",
+            boxShadow: "0 10px 28px rgba(41,82,213,0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 16,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ maxWidth: 720 }}>
+              <h2
+                style={{
+                  margin: "0 0 8px 0",
+                  fontSize: 24,
+                  lineHeight: 1.2,
+                  fontWeight: 800,
+                  color: "#10203a",
+                }}
+              >
+                Not sure which volunteer route fits your profile?
+              </h2>
+              <p style={{ margin: 0, color: "#475569", lineHeight: 1.65 }}>
+                Try TripDoc Volunteer Match.
+              </p>
+            </div>
+
+            <Link
+              href="/volunteer-match"
+              style={{
+                background: "#2952d5",
+                color: "#ffffff",
+                padding: "12px 16px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 44,
+                boxShadow: "0 8px 20px rgba(41,82,213,0.18)",
+              }}
+            >
+              Check My Match
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {programs.length === 0 ? (
         <div

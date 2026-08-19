@@ -15,6 +15,7 @@ const opportunitiesItems = [
   { href: "/types/internship", label: "Internships" },
   { href: "/types/fellowship", label: "Fellowships" },
   { href: "/volunteer-screening", label: "Volunteer Screening" },
+  { href: "/volunteer-match", label: "Volunteer Match" },
 ];
 
 function isActivePath(pathname: string, href: string) {

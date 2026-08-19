@@ -735,6 +735,85 @@ export default async function Home() {
           style={{
             marginTop: 0,
             marginBottom: 28,
+            border: "1px solid rgba(41,82,213,0.18)",
+            borderRadius: 20,
+            padding: "28px 24px",
+            background:
+              "linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%)",
+            boxShadow: "0 14px 35px rgba(41,82,213,0.1)",
+            color: "#10203a",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 22,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ maxWidth: 760 }}>
+              <div
+                style={{
+                  display: "inline-block",
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "#dbeafe",
+                  border: "1px solid #bfdbfe",
+                  color: "#17307a",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                Volunteer Match
+              </div>
+
+              <h2 style={{ margin: "0 0 10px 0", fontSize: 30, fontWeight: 800 }}>
+                Not sure which Germany volunteer route fits you?
+              </h2>
+
+              <p
+                style={{
+                  color: "#475569",
+                  margin: 0,
+                  lineHeight: 1.65,
+                  fontSize: 16,
+                }}
+              >
+                Use TripDoc Volunteer Match to compare your profile with verified
+                routes such as weltwärts, BFD, FSJ, FÖJ and selected SCI
+                programmes.
+              </p>
+            </div>
+
+            <Link
+              href="/volunteer-match"
+              style={{
+                background: "#2952d5",
+                color: "#ffffff",
+                padding: "13px 18px",
+                borderRadius: 10,
+                textDecoration: "none",
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 46,
+                minWidth: 220,
+                boxShadow: "0 8px 22px rgba(41,82,213,0.18)",
+              }}
+            >
+              Check My Volunteer Routes
+            </Link>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 0,
+            marginBottom: 28,
             border: "1px solid rgba(41,82,213,0.22)",
             borderRadius: 20,
             padding: "28px 24px",
