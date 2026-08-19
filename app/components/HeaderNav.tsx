@@ -137,6 +137,7 @@ export default function HeaderNav() {
           <button
             ref={desktopButtonRef}
             type="button"
+            suppressHydrationWarning
             className={getTopLevelNavClass(
               isOpportunitiesActive || isDropdownOpen,
               "navButton"
@@ -196,6 +197,7 @@ export default function HeaderNav() {
       <div className="mobileNav">
         <button
           type="button"
+          suppressHydrationWarning
           className="navItem navButton mobileMenuButton"
           aria-expanded={isMobileMenuOpen}
           aria-controls="mobile-navigation"
@@ -226,6 +228,7 @@ export default function HeaderNav() {
 
             <button
               type="button"
+              suppressHydrationWarning
               className={`mobileLink mobileSectionButton ${
                 isOpportunitiesActive ? "activeMobileLink" : ""
               }`}
@@ -489,3 +492,4 @@ export default function HeaderNav() {
     </div>
   );
 }
+
