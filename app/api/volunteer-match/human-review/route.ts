@@ -5,6 +5,10 @@ import {
   volunteerHumanReviewSubmissionSchema,
 } from "../../../../lib/volunteerMatchMvp";
 import {
+  sendVolunteerHumanReviewNotification,
+  type VolunteerHumanReviewNotificationRequest,
+} from "../../../../lib/volunteerHumanReviewNotifications";
+import {
   checkVolunteerMatchRateLimit,
   HUMAN_REVIEW_DUPLICATE_WINDOW_MS,
   isRapidDuplicateHumanReviewRequest,
@@ -108,15 +112,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { error: requestError } = await supabaseAdmin
+    const { data: reviewRequest, error: requestError } = await supabaseAdmin
       .from("volunteer_human_review_requests")
-      .insert(buildHumanReviewRequestInsertPayload({ submission, consentedAt }));
+      .insert(buildHumanReviewRequestInsertPayload({ submission, consentedAt }))
+      .select(
+        "id,session_id,name,email,whatsapp,preferred_contact_method,message,created_at"
+      )
+      .single();
 
-    if (requestError) {
+    if (requestError || !reviewRequest) {
       console.error("Volunteer human review insert error:", requestError);
       return NextResponse.json(
         { error: "Could not submit human review request." },
         { status: 500 }
+      );
+    }
+
+    try {
+      const notificationResult = await sendVolunteerHumanReviewNotification({
+        request: reviewRequest as VolunteerHumanReviewNotificationRequest,
+        acquisitionSource: session.acquisition_source,
+        origin: req.nextUrl.origin,
+      });
+
+      if (!notificationResult.sent) {
+        console.warn("Volunteer human review notification not sent:", {
+          reason: notificationResult.reason,
+          skipped:
+            "skipped" in notificationResult ? notificationResult.skipped : false,
+        });
+      }
+    } catch (notificationError) {
+      console.error(
+        "Volunteer human review notification failed:",
+        notificationError instanceof Error
+          ? notificationError.message
+          : "Unknown notification error"
       );
     }
 

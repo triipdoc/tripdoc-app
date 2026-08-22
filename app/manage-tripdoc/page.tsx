@@ -933,6 +933,21 @@ setFunding(normalizeFunding(program.funding_type || ""));
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Link
+            href="/manage-tripdoc/human-reviews"
+            style={{
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "#fff",
+              color: "#111",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            Human Reviews
+          </Link>
+
+          <Link
             href="/manage-tripdoc/hiring-companies"
             style={{
               padding: "10px 14px",

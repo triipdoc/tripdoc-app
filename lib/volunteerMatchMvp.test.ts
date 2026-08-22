@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { NextRequest } from "next/server";
+import { middleware } from "../middleware";
 import {
   buildHumanReviewRequestInsertPayload,
   buildVolunteerMatchSummary,
@@ -30,6 +32,11 @@ import {
   readJsonBodyWithLimit,
   VolunteerMatchRequestError,
 } from "./volunteerMatchAbuseProtection";
+import { sendVolunteerHumanReviewNotification } from "./volunteerHumanReviewNotifications";
+import {
+  adminHumanReviewUpdateSchema,
+  buildHumanReviewStatusUpdate,
+} from "./volunteerHumanReviews";
 import type {
   VolunteerQuestionnaireAnswers,
   VolunteerRouteResult,
@@ -39,6 +46,14 @@ const sessionId = "11111111-1111-4111-8111-111111111111";
 const routeId = "22222222-2222-4222-8222-222222222222";
 const ruleVersionId = "33333333-3333-4333-8333-333333333333";
 const programId = "44444444-4444-4444-8444-444444444444";
+
+function restoreEnv(name: string, value?: string) {
+  if (value === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = value;
+  }
+}
 
 const validAnswers: VolunteerQuestionnaireAnswers = {
   age: 24,
@@ -466,6 +481,7 @@ test("human-review preferred_contact_method is validated and persisted separatel
   });
 
   assert.equal(payload.preferred_contact_method, "whatsapp");
+  assert.equal(payload.status, "new");
   assert.equal(payload.message?.includes("Preferred contact method"), false);
   assert.equal(payload.message, "Applicant note: Please review my route fit.");
 });
@@ -520,6 +536,151 @@ test("rapid duplicate human-review requests are detected by session and contact"
     }),
     false
   );
+});
+
+test("human-review admin workflow statuses set timestamps without overwriting history", () => {
+  const contactedAt = "2026-08-22T10:00:00.000Z";
+  const reviewedAt = "2026-08-22T11:00:00.000Z";
+
+  const contactedUpdate = buildHumanReviewStatusUpdate({
+    current: { status: "new" },
+    nextStatus: "contacted",
+    now: new Date(contactedAt),
+  });
+
+  assert.equal(contactedUpdate.status, "contacted");
+  assert.equal(contactedUpdate.contacted_at, contactedAt);
+
+  const reviewedUpdate = buildHumanReviewStatusUpdate({
+    current: {
+      status: "contacted",
+      contacted_at: contactedAt,
+    },
+    nextStatus: "reviewed",
+    adminNotes: "Applicant contacted by email.",
+    now: new Date(reviewedAt),
+  });
+
+  assert.equal(reviewedUpdate.status, "reviewed");
+  assert.equal(reviewedUpdate.contacted_at, undefined);
+  assert.equal(reviewedUpdate.reviewed_at, reviewedAt);
+  assert.equal(reviewedUpdate.admin_notes, "Applicant contacted by email.");
+});
+
+test("human-review admin notes validation trims notes and rejects invalid statuses", () => {
+  const parsed = adminHumanReviewUpdateSchema.parse({
+    status: "closed",
+    admin_notes: "  Follow-up complete.  ",
+  });
+
+  assert.equal(parsed.status, "closed");
+  assert.equal(parsed.admin_notes, "Follow-up complete.");
+
+  assert.throws(() =>
+    adminHumanReviewUpdateSchema.parse({
+      status: "spam",
+    })
+  );
+});
+
+test("human-review admin API is protected by existing middleware", () => {
+  const request = new NextRequest("https://tripdoc.test/api/admin/human-reviews");
+  const response = middleware(request);
+
+  assert.equal(response.status, 401);
+});
+
+test("human-review notification sends approved applicant details through Resend", async () => {
+  const previousApiKey = process.env.RESEND_API_KEY;
+  const previousRecipient = process.env.TRIPDOC_ADMIN_NOTIFICATION_EMAIL;
+  const previousFrom = process.env.TRIPDOC_NOTIFICATION_FROM;
+
+  process.env.RESEND_API_KEY = "re_test_key";
+  process.env.TRIPDOC_ADMIN_NOTIFICATION_EMAIL = "admin@example.com";
+  process.env.TRIPDOC_NOTIFICATION_FROM = "TripDoc <reviews@example.com>";
+
+  const calls: { input: string; init: RequestInit }[] = [];
+  const result = await sendVolunteerHumanReviewNotification({
+    request: {
+      id: "55555555-5555-4555-8555-555555555555",
+      session_id: sessionId,
+      name: "Test Applicant",
+      email: "person@example.com",
+      whatsapp: "+2340000000000",
+      preferred_contact_method: "email",
+      message: "Applicant note: Please review my profile.",
+      created_at: "2026-08-22T10:00:00.000Z",
+    },
+    acquisitionSource: "tiktok",
+    origin: "https://app.tripdoc.net",
+    fetchImpl: async (input, init) => {
+      calls.push({ input, init });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => "",
+      };
+    },
+  });
+
+  assert.deepEqual(result, { sent: true });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].input, "https://api.resend.com/emails");
+
+  const body = JSON.parse(calls[0].init.body as string) as {
+    to: string[];
+    subject: string;
+    text: string;
+  };
+
+  assert.deepEqual(body.to, ["admin@example.com"]);
+  assert.equal(body.subject, "New TripDoc Volunteer Human Review Request");
+  assert.match(body.text, /Test Applicant/);
+  assert.match(body.text, /person@example\.com/);
+  assert.match(body.text, /tiktok/);
+
+  restoreEnv("RESEND_API_KEY", previousApiKey);
+  restoreEnv("TRIPDOC_ADMIN_NOTIFICATION_EMAIL", previousRecipient);
+  restoreEnv("TRIPDOC_NOTIFICATION_FROM", previousFrom);
+});
+
+test("human-review notification failure does not throw", async () => {
+  const previousApiKey = process.env.RESEND_API_KEY;
+  const previousRecipient = process.env.TRIPDOC_ADMIN_NOTIFICATION_EMAIL;
+  const previousFrom = process.env.TRIPDOC_NOTIFICATION_FROM;
+
+  process.env.RESEND_API_KEY = "re_test_key";
+  process.env.TRIPDOC_ADMIN_NOTIFICATION_EMAIL = "admin@example.com";
+  process.env.TRIPDOC_NOTIFICATION_FROM = "TripDoc <reviews@example.com>";
+
+  const result = await sendVolunteerHumanReviewNotification({
+    request: {
+      id: "66666666-6666-4666-8666-666666666666",
+      session_id: sessionId,
+      name: "Test Applicant",
+      email: "person@example.com",
+      whatsapp: null,
+      preferred_contact_method: "email",
+      message: null,
+      created_at: "2026-08-22T10:00:00.000Z",
+    },
+    acquisitionSource: "instagram",
+    fetchImpl: async () => ({
+      ok: false,
+      status: 500,
+      text: async () => "provider error",
+    }),
+  });
+
+  assert.deepEqual(result, {
+    sent: false,
+    reason: "resend_error",
+    status: 500,
+  });
+
+  restoreEnv("RESEND_API_KEY", previousApiKey);
+  restoreEnv("TRIPDOC_ADMIN_NOTIFICATION_EMAIL", previousRecipient);
+  restoreEnv("TRIPDOC_NOTIFICATION_FROM", previousFrom);
 });
 
 test("body-size and rate-limit helpers reject oversized or rapid requests", async () => {
@@ -584,5 +745,3 @@ test("volunteer match view event captures source without requiring a session", (
     })
   );
 });
-
-
