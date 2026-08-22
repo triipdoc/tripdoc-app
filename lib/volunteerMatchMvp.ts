@@ -645,6 +645,7 @@ export function buildVolunteerMatchResponse({
 }
 
 export const volunteerMatchClientEventNameSchema = z.enum([
+  "volunteer_match_viewed",
   "matching_opportunity_clicked",
   "human_review_clicked",
 ]);
@@ -652,12 +653,21 @@ export const volunteerMatchClientEventNameSchema = z.enum([
 export const volunteerMatchClientEventSchema = z
   .object({
     eventName: volunteerMatchClientEventNameSchema,
-    sessionId: z.string().uuid(),
+    sessionId: z.string().uuid().optional(),
     routeId: z.string().uuid().optional(),
     programId: z.string().uuid().optional(),
+    acquisitionSource: acquisitionSourceSchema.optional(),
   })
   .strict()
   .superRefine((event, ctx) => {
+    if (event.eventName !== "volunteer_match_viewed" && !event.sessionId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["sessionId"],
+        message: "Session id is required for this event.",
+      });
+    }
+
     if (event.eventName === "matching_opportunity_clicked") {
       if (!event.routeId) {
         ctx.addIssue({

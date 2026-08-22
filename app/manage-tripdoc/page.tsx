@@ -35,6 +35,28 @@ type AnalyticsLabelRow = {
 
 type AnalyticsRange = "last7days" | "last30days" | "alltime";
 
+type VolunteerMatchRouteRow = {
+  route_id: string;
+  route_slug: string;
+  route_name: string;
+  count: number;
+};
+
+type VolunteerMatchAnalyticsData = {
+  totalViews: number;
+  totalStarted: number;
+  totalCompleted: number;
+  startRate: number;
+  completionRate: number;
+  matchingOpportunityClicks: number;
+  humanReviewClicks: number;
+  humanReviewSubmissions: number;
+  topAcquisitionSources: AnalyticsLabelRow[];
+  topCountries: AnalyticsLabelRow[];
+  topRecommendedRoutes: VolunteerMatchRouteRow[];
+  warning?: string;
+};
+
 type AnalyticsData = {
   range: AnalyticsRange;
   totalClicks: number;
@@ -45,6 +67,7 @@ type AnalyticsData = {
   topShared: AnalyticsRow[];
   topCountries: AnalyticsLabelRow[];
   topOpportunityTypes: AnalyticsLabelRow[];
+  volunteerMatch?: VolunteerMatchAnalyticsData;
 };
 
 type FormErrors = {
@@ -263,6 +286,11 @@ function getRangeLabel(range: AnalyticsRange) {
     default:
       return "Last 7 Days";
   }
+}
+
+function formatRate(value?: number) {
+  const safeValue = Number.isFinite(value) ? Number(value) : 0;
+  return `${(safeValue * 100).toFixed(1)}%`;
 }
 
 function formatDate(value?: string | null) {
@@ -882,6 +910,8 @@ setFunding(normalizeFunding(program.funding_type || ""));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const volunteerMatchAnalytics = analytics?.volunteerMatch;
+
   return (
     <main style={{ padding: 40, fontFamily: "Arial" }}>
       <div
@@ -1235,6 +1265,223 @@ setFunding(normalizeFunding(program.funding_type || ""));
                 )}
               </div>
             </div>
+
+            {volunteerMatchAnalytics ? (
+              <div
+                style={{
+                  marginTop: 28,
+                  borderTop: "1px solid #edf1f7",
+                  paddingTop: 24,
+                }}
+              >
+                <div style={{ marginBottom: 18 }}>
+                  <h2 style={{ margin: 0 }}>Volunteer Match Analytics</h2>
+                  <p style={{ color: "#666", margin: "8px 0 0 0" }}>
+                    Page views, match usage, and recommended-route signals from
+                    Volunteer Match.
+                  </p>
+                </div>
+
+                {volunteerMatchAnalytics.warning ? (
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      border: "1px solid #f3d18a",
+                      borderRadius: 10,
+                      padding: 12,
+                      background: "#fff8e5",
+                      color: "#6b4e00",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {volunteerMatchAnalytics.warning}
+                  </div>
+                ) : null}
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+                    gap: 14,
+                    marginBottom: 24,
+                  }}
+                >
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Total Views
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {volunteerMatchAnalytics.totalViews}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Match Started
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {volunteerMatchAnalytics.totalStarted}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Match Completed
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {volunteerMatchAnalytics.totalCompleted}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Start Rate
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {formatRate(volunteerMatchAnalytics.startRate)}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Completion Rate
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {formatRate(volunteerMatchAnalytics.completionRate)}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Opportunity Clicks
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {volunteerMatchAnalytics.matchingOpportunityClicks}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Human Review Clicks
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {volunteerMatchAnalytics.humanReviewClicks}
+                    </div>
+                  </div>
+
+                  <div style={{ ...sectionCardStyle, padding: 18 }}>
+                    <div style={{ color: "#666", fontSize: 13, marginBottom: 6 }}>
+                      Review Submissions
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>
+                      {volunteerMatchAnalytics.humanReviewSubmissions}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                    gap: 16,
+                  }}
+                >
+                  <div style={sectionCardStyle}>
+                    <h3 style={{ marginTop: 0 }}>Top Acquisition Sources</h3>
+                    {volunteerMatchAnalytics.topAcquisitionSources.length === 0 ? (
+                      <p style={{ color: "#666", marginBottom: 0 }}>
+                        No source data yet.
+                      </p>
+                    ) : (
+                      <div style={{ display: "grid", gap: 10 }}>
+                        {volunteerMatchAnalytics.topAcquisitionSources.map(
+                          (item, index) => (
+                            <div
+                              key={`${item.label}-volunteer-source`}
+                              style={{
+                                border: "1px solid #eee",
+                                borderRadius: 10,
+                                padding: 12,
+                                background: "#fafafa",
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                                {index + 1}. {item.label}
+                              </div>
+                              <div style={{ color: "#666", fontSize: 14 }}>
+                                {item.count} views
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={sectionCardStyle}>
+                    <h3 style={{ marginTop: 0 }}>Top Countries</h3>
+                    {volunteerMatchAnalytics.topCountries.length === 0 ? (
+                      <p style={{ color: "#666", marginBottom: 0 }}>
+                        No completed-match country data yet.
+                      </p>
+                    ) : (
+                      <div style={{ display: "grid", gap: 10 }}>
+                        {volunteerMatchAnalytics.topCountries.map((item, index) => (
+                          <div
+                            key={`${item.label}-volunteer-country`}
+                            style={{
+                              border: "1px solid #eee",
+                              borderRadius: 10,
+                              padding: 12,
+                              background: "#fafafa",
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                              {index + 1}. {item.label}
+                            </div>
+                            <div style={{ color: "#666", fontSize: 14 }}>
+                              {item.count} completed matches
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={sectionCardStyle}>
+                    <h3 style={{ marginTop: 0 }}>Top Recommended Routes</h3>
+                    {volunteerMatchAnalytics.topRecommendedRoutes.length === 0 ? (
+                      <p style={{ color: "#666", marginBottom: 0 }}>
+                        No recommended-route data yet.
+                      </p>
+                    ) : (
+                      <div style={{ display: "grid", gap: 10 }}>
+                        {volunteerMatchAnalytics.topRecommendedRoutes.map(
+                          (item, index) => (
+                            <div
+                              key={`${item.route_id}-recommended-route`}
+                              style={{
+                                border: "1px solid #eee",
+                                borderRadius: 10,
+                                padding: 12,
+                                background: "#fafafa",
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                                {index + 1}. {item.route_name}
+                              </div>
+                              <div style={{ color: "#666", fontSize: 14 }}>
+                                {item.count} top recommendations
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </>
         ) : (
           <p style={{ color: "#c62828" }}>Could not load analytics.</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   buildVolunteerMatchSummary,
   educationOptions,
@@ -42,6 +42,8 @@ import {
 const startYears = Array.from({ length: 7 }, (_, index) => 2026 + index);
 
 type FormAnswers = VolunteerQuestionnaireAnswers;
+
+let volunteerMatchViewTrackedForBrowserLoad = false;
 
 type HumanReviewFormState = {
   name: string;
@@ -513,6 +515,7 @@ export default function VolunteerMatchClient({
   const [reviewMessage, setReviewMessage] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
+  const viewTrackedRef = useRef(false);
 
   const currentSection = volunteerMatchQuestionSections[activeSection];
   const progress = Math.round(((activeSection + 1) / volunteerMatchQuestionSections.length) * 100);
@@ -520,6 +523,41 @@ export default function VolunteerMatchClient({
   const hasExperienceDetails = shouldAskVolunteerExperienceDetails(answers);
   const experienceType = answers.volunteerExperienceType || "none";
   const organisationConnectionStatus = getOrganisationConnectionStatus(answers);
+
+  useEffect(() => {
+    if (viewTrackedRef.current || volunteerMatchViewTrackedForBrowserLoad) return;
+
+    const viewKey =
+      typeof window !== "undefined" && "sessionStorage" in window
+        ? `tripdoc:volunteer-match-viewed:${window.location.pathname}:${window.location.search}:${Math.floor(
+            window.performance.timeOrigin
+          )}`
+        : "";
+
+    if (viewKey) {
+      try {
+        if (window.sessionStorage.getItem(viewKey)) return;
+        window.sessionStorage.setItem(viewKey, "1");
+      } catch {
+        // If sessionStorage is unavailable, the in-memory guard still prevents render duplicates.
+      }
+    }
+
+    viewTrackedRef.current = true;
+    volunteerMatchViewTrackedForBrowserLoad = true;
+
+    fetch("/api/volunteer-match/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        eventName: "volunteer_match_viewed",
+        acquisitionSource: initialSource,
+      }),
+    }).catch((error) => {
+      console.error("Volunteer Match view tracking failed:", error);
+    });
+  }, [initialSource]);
 
   function updateAnswer<K extends keyof FormAnswers>(key: K, value: FormAnswers[K]) {
     setAnswers((current) => {

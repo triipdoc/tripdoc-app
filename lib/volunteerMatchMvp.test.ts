@@ -561,5 +561,28 @@ test("linked opportunity click event requires session, route, and program ids", 
   );
 });
 
+test("volunteer match view event captures source without requiring a session", () => {
+  const event = volunteerMatchClientEventSchema.parse({
+    eventName: "volunteer_match_viewed",
+    acquisitionSource: "tiktok",
+  });
+
+  assert.equal(event.eventName, "volunteer_match_viewed");
+  assert.equal(event.acquisitionSource, "tiktok");
+  assert.equal(event.sessionId, undefined);
+
+  assert.throws(() =>
+    volunteerMatchClientEventSchema.parse({
+      eventName: "human_review_clicked",
+    })
+  );
+
+  assert.throws(() =>
+    volunteerMatchClientEventSchema.parse({
+      eventName: "volunteer_match_viewed",
+      acquisitionSource: "newsletter",
+    })
+  );
+});
 
 

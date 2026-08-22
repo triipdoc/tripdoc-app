@@ -57,7 +57,29 @@ export async function POST(req: NextRequest) {
 
     const body = await readJsonBodyWithLimit(req, VOLUNTEER_MATCH_EVENT_BODY_LIMIT_BYTES);
     const event = volunteerMatchClientEventSchema.parse(body);
-    const session = await getSession(event.sessionId);
+
+    if (event.eventName === "volunteer_match_viewed") {
+      const { error } = await supabaseAdmin.from("volunteer_match_events").insert({
+        event_name: event.eventName,
+        session_id: null,
+        route_id: null,
+        program_id: null,
+        acquisition_source: event.acquisitionSource || null,
+        metadata: {},
+      });
+
+      if (error) {
+        console.error("Volunteer match view event insert error:", error);
+        return NextResponse.json(
+          { error: "Could not record volunteer match view." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    const session = await getSession(event.sessionId!);
 
     if (!session) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
@@ -79,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabaseAdmin.from("volunteer_match_events").insert({
       event_name: event.eventName,
-      session_id: event.sessionId,
+      session_id: event.sessionId!,
       route_id: event.routeId || null,
       program_id: event.programId || null,
       acquisition_source: session.acquisition_source,
