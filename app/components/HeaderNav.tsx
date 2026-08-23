@@ -14,7 +14,6 @@ const opportunitiesItems = [
   { href: "/types/scholarship", label: "Scholarships" },
   { href: "/types/internship", label: "Internships" },
   { href: "/types/fellowship", label: "Fellowships" },
-  { href: "/volunteer-screening", label: "Volunteer Screening" },
   { href: "/volunteer-match", label: "Volunteer Match" },
 ];
 

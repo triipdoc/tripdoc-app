@@ -193,8 +193,8 @@ export default function Footer() {
                 <Link href="/types/fellowship" style={footerLinkStyle}>
                   Fellowships
                 </Link>
-                <Link href="/volunteer-screening" style={footerLinkStyle}>
-                  Volunteer Screening
+                <Link href="/volunteer-match" style={footerLinkStyle}>
+                  Volunteer Match
                 </Link>
               </div>
             </div>

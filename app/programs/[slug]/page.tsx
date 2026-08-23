@@ -659,7 +659,7 @@ export default async function ProgramDetailPage({
 
           {isWeltwaertsSouthNorth && (
             <Link
-              href="/volunteer-screening"
+              href="/volunteer-match"
               style={{
                 padding: "14px 18px",
                 background: "white",
@@ -670,8 +670,8 @@ export default async function ProgramDetailPage({
                 fontWeight: 700,
               }}
             >
-              Not sure if you are ready? Complete the TripDoc volunteer
-              pre-screening first.
+              Not sure which volunteer route fits your profile? Try TripDoc
+              Volunteer Match.
             </Link>
           )}
 
