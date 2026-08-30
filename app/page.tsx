@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import ProgramsClient from "./programs/ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
 import HeroSearch from "./components/HeroSearch";
+import ProgramImage from "./components/ProgramImage";
 import TrackedProgramLink from "./components/TrackedProgramLink";
 
 type Program = {
@@ -224,18 +225,14 @@ function ProgramCard({
       }}
     >
       {program.image_url && (
-        <img
+        <ProgramImage
           src={program.image_url}
           alt={program.title}
-          loading="lazy"
-          style={{
-            width: "100%",
-            height: featured ? 170 : 140,
-            objectFit: "cover",
-            borderRadius: 10,
-            marginBottom: 12,
-            display: "block",
-          }}
+          width={640}
+          height={featured ? 170 : 140}
+          sizes={featured ? "(max-width: 768px) 100vw, 360px" : "(max-width: 768px) 100vw, 320px"}
+          borderRadius={10}
+          marginBottom={12}
         />
       )}
 
@@ -497,6 +494,7 @@ export default async function Home() {
   const popularPrograms = verifiedActivePrograms
     .filter((p) => !featuredIds.has(p.id) && !closingSoonIds.has(p.id))
     .slice(0, 6);
+  const homepageOpportunityPreview = verifiedActivePrograms.slice(0, 18);
 
   return (
     <>
@@ -1405,9 +1403,31 @@ export default async function Home() {
           </div>
 
           <ProgramsClient
-            initialPrograms={verifiedActivePrograms}
-            totalPrograms={verifiedActivePrograms.length}
+            initialPrograms={homepageOpportunityPreview}
+            totalPrograms={homepageOpportunityPreview.length}
           />
+
+          {verifiedActivePrograms.length > homepageOpportunityPreview.length && (
+            <div style={{ marginTop: 24, textAlign: "center" }}>
+              <Link
+                href="/programs"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 999,
+                  padding: "12px 18px",
+                  background: "#0b5cff",
+                  color: "white",
+                  textDecoration: "none",
+                  fontWeight: 800,
+                  boxShadow: "0 10px 24px rgba(11,92,255,0.18)",
+                }}
+              >
+                View all opportunities
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </>

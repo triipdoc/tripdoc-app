@@ -1,6 +1,7 @@
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
 import Link from "next/link";
+import ProgramImage from "../../components/ProgramImage";
 
 type Program = {
   id: string;
@@ -222,38 +223,13 @@ export default async function TypePage({
                 boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
               }}
             >
-              {program.image_url ? (
-                <img
-                  src={program.image_url}
-                  alt={program.title}
-                  style={{
-                    width: "100%",
-                    height: 170,
-                    objectFit: "cover",
-                    borderRadius: 12,
-                    marginBottom: 14,
-                    display: "block",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: 170,
-                    borderRadius: 12,
-                    marginBottom: 14,
-                    background: "#f1f1f1",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#777",
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  No image available
-                </div>
-              )}
+              <ProgramImage
+                src={program.image_url}
+                alt={program.title}
+                width={640}
+                height={170}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 360px"
+              />
 
               <div
                 style={{

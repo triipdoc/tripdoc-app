@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import ProgramImage from "../components/ProgramImage";
 
 type VerificationStatus = "verified" | "pending";
 
@@ -108,6 +109,17 @@ type ProgramsResponse = {
 };
 
 const PAGE_SIZE = 10;
+const MAX_SOURCE_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_PROCESSED_IMAGE_BYTES = 700 * 1024;
+const TARGET_IMAGE_BYTES = 350 * 1024;
+const MAX_UPLOAD_IMAGE_WIDTH = 1200;
+const MAX_UPLOAD_IMAGE_HEIGHT = 900;
+const SUPPORTED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
 
 const TYPE_OPTIONS = [
   "Scholarship",
@@ -334,16 +346,189 @@ function insertAtCursor(
   return currentValue.slice(0, start) + insertText + currentValue.slice(end);
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+function validateProgramImageFile(file: File) {
+  if (!SUPPORTED_IMAGE_TYPES.has(file.type)) {
+    throw new Error(
+      "Unsupported image type. Please upload a JPEG, PNG, WebP, or AVIF image."
+    );
+  }
+
+  if (file.size > MAX_SOURCE_IMAGE_BYTES) {
+    throw new Error(
+      `Image is too large (${formatFileSize(file.size)}). Please upload an image under ${formatFileSize(
+        MAX_SOURCE_IMAGE_BYTES
+      )}.`
+    );
+  }
+}
+
+function getScaledDimensions(width: number, height: number) {
+  const scale = Math.min(
+    MAX_UPLOAD_IMAGE_WIDTH / width,
+    MAX_UPLOAD_IMAGE_HEIGHT / height,
+    1
+  );
+
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+    wasResized: scale < 1,
+  };
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number
+) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Could not process this image. Please try another file."));
+          return;
+        }
+
+        resolve(blob);
+      },
+      type,
+      quality
+    );
+  });
+}
+
+function hasTransparentPixels(canvas: HTMLCanvasElement) {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return false;
+
+  const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+
+  for (let index = 3; index < data.length; index += 4) {
+    if (data[index] < 255) return true;
+  }
+
+  return false;
+}
+
+function getImageExtension(type: string) {
+  if (type === "image/png") return "png";
+  if (type === "image/jpeg") return "jpg";
+  if (type === "image/avif") return "avif";
+  return "webp";
+}
+
+function replaceFileExtension(fileName: string, extension: string) {
+  const cleanName = fileName.replace(/\.[a-z0-9]+$/i, "");
+  return `${cleanName || "program-image"}.${extension}`;
+}
+
+async function loadLocalImage(file: File) {
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = document.createElement("img");
+    image.src = objectUrl;
+    await image.decode();
+
+    return {
+      image,
+      revoke: () => URL.revokeObjectURL(objectUrl),
+    };
+  } catch {
+    URL.revokeObjectURL(objectUrl);
+    throw new Error("This image could not be read. Please try a different file.");
+  }
+}
+
+async function prepareProgramImageForUpload(file: File) {
+  validateProgramImageFile(file);
+
+  const { image, revoke } = await loadLocalImage(file);
+
+  try {
+    const originalWidth = image.naturalWidth;
+    const originalHeight = image.naturalHeight;
+
+    if (!originalWidth || !originalHeight) {
+      throw new Error("This image has invalid dimensions.");
+    }
+
+    const dimensions = getScaledDimensions(originalWidth, originalHeight);
+    const canKeepOriginal =
+      !dimensions.wasResized &&
+      file.size <= TARGET_IMAGE_BYTES &&
+      file.type !== "image/png";
+
+    if (canKeepOriginal) {
+      return file;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = dimensions.width;
+    canvas.height = dimensions.height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Could not prepare this image for upload.");
+    }
+
+    context.drawImage(image, 0, 0, dimensions.width, dimensions.height);
+
+    const pngHasTransparency =
+      file.type === "image/png" && hasTransparentPixels(canvas);
+    const outputType = pngHasTransparency ? "image/png" : "image/webp";
+    const qualitySteps = [0.78, 0.72, 0.66, 0.6];
+
+    let processedBlob =
+      outputType === "image/png"
+        ? await canvasToBlob(canvas, outputType)
+        : await canvasToBlob(canvas, outputType, qualitySteps[0]);
+
+    if (outputType === "image/webp") {
+      for (const quality of qualitySteps.slice(1)) {
+        if (processedBlob.size <= TARGET_IMAGE_BYTES) break;
+        processedBlob = await canvasToBlob(canvas, outputType, quality);
+      }
+    }
+
+    if (processedBlob.size > MAX_PROCESSED_IMAGE_BYTES) {
+      throw new Error(
+        `Image is still too large after optimisation (${formatFileSize(
+          processedBlob.size
+        )}). Please use a smaller or less detailed image.`
+      );
+    }
+
+    return new File(
+      [processedBlob],
+      replaceFileExtension(file.name, getImageExtension(outputType)),
+      {
+        type: outputType,
+        lastModified: Date.now(),
+      }
+    );
+  } finally {
+    revoke();
+  }
+}
+
 async function uploadProgramImage(file: File) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "-");
+  const preparedFile = await prepareProgramImageForUpload(file);
+  const safeName = preparedFile.name.replace(/[^a-zA-Z0-9.-]/g, "-");
   const fileName = `${Date.now()}-${safeName}`;
   const filePath = `programs/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("program-images")
-    .upload(filePath, file, {
-      cacheControl: "3600",
+    .upload(filePath, preparedFile, {
+      cacheControl: "31536000",
       upsert: false,
+      contentType: preparedFile.type,
     });
 
   if (uploadError) {
@@ -627,9 +812,21 @@ funding_type: normalizedFunding,
       await loadPrograms({ page: 1, searchValue: search, sortValue: sortBy });
     } catch (error) {
       console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while adding the program.";
+
+      if (imageFile) {
+        setFormErrors((prev) => ({
+          ...prev,
+          imageUrl: message,
+        }));
+      }
+
       setNotice({
         type: "error",
-        message: "Something went wrong while adding the program.",
+        message,
       });
     } finally {
       setLoading(false);
@@ -733,9 +930,21 @@ funding_type: normalizedFunding,
       });
     } catch (error) {
       console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while updating the program.";
+
+      if (imageFile) {
+        setFormErrors((prev) => ({
+          ...prev,
+          imageUrl: message,
+        }));
+      }
+
       setNotice({
         type: "error",
-        message: "Something went wrong while updating the program.",
+        message,
       });
     } finally {
       setLoading(false);
@@ -1640,6 +1849,7 @@ setFunding(normalizeFunding(program.funding_type || ""));
             value={imageUrl}
             onChange={(e) => {
               setImageUrl(e.target.value);
+              setFormErrors((prev) => ({ ...prev, imageUrl: undefined }));
               if (e.target.value.trim()) {
                 setImagePreviewUrl(e.target.value);
                 setImageFile(null);
@@ -1667,15 +1877,36 @@ setFunding(normalizeFunding(program.funding_type || ""));
 
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             onChange={(e) => {
               const file = e.target.files?.[0] || null;
-              setImageFile(file);
+              setFormErrors((prev) => ({ ...prev, imageUrl: undefined }));
 
-              if (file) {
+              if (!file) {
+                setImageFile(null);
+                return;
+              }
+
+              try {
+                validateProgramImageFile(file);
+                setImageFile(file);
+
                 const localPreview = URL.createObjectURL(file);
                 setImagePreviewUrl(localPreview);
                 setImageUrl("");
+              } catch (error) {
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : "This image cannot be uploaded.";
+
+                setImageFile(null);
+                setImagePreviewUrl("");
+                e.currentTarget.value = "";
+                setFormErrors((prev) => ({
+                  ...prev,
+                  imageUrl: message,
+                }));
               }
             }}
             style={{
@@ -1686,7 +1917,8 @@ setFunding(normalizeFunding(program.funding_type || ""));
           />
 
           <div style={{ color: "#666", fontSize: 12, marginTop: 6 }}>
-            You can either paste an image URL or upload an image file.
+            Upload JPEG, PNG, WebP, or AVIF under {formatFileSize(MAX_SOURCE_IMAGE_BYTES)}.
+            Large images are resized and optimised before upload.
           </div>
         </div>
 
@@ -2029,17 +2261,17 @@ setFunding(normalizeFunding(program.funding_type || ""));
                 }}
               >
                 {program.image_url && (
-                  <img
+                  <ProgramImage
                     src={program.image_url}
                     alt={program.title}
+                    width={640}
+                    height={320}
+                    sizes="320px"
+                    borderRadius={8}
+                    marginBottom={12}
                     style={{
-                      width: "100%",
                       maxWidth: 320,
                       height: 160,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      marginBottom: 12,
-                      display: "block",
                       border: "1px solid #eee",
                     }}
                   />

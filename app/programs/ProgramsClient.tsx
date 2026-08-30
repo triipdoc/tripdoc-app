@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ProgramImage from "../components/ProgramImage";
 
 type Program = {
   id: string;
@@ -138,55 +139,6 @@ function DeadlineBadge({ deadline }: { deadline?: string | null }) {
     >
       {s.label}
     </span>
-  );
-}
-
-function ProgramImage({
-  src,
-  alt,
-}: {
-  src?: string | null;
-  alt: string;
-}) {
-  const [hasError, setHasError] = useState(false);
-
-  if (!src || hasError) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height: 180,
-          borderRadius: 10,
-          marginBottom: 12,
-          background: "#f1f1f1",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#777",
-          fontSize: 14,
-          fontWeight: 600,
-          border: "1px solid #e5e5e5",
-        }}
-      >
-        No image available
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      onError={() => setHasError(true)}
-      style={{
-        width: "100%",
-        height: 170,
-        objectFit: "cover",
-        borderRadius: 12,
-        marginBottom: 14,
-        display: "block",
-      }}
-    />
   );
 }
 
@@ -623,7 +575,13 @@ export default function ProgramsClient({
                       display: "block",
                     }}
                   >
-                    <ProgramImage src={p.image_url} alt={p.title} />
+                    <ProgramImage
+                      src={p.image_url}
+                      alt={p.title}
+                      width={640}
+                      height={170}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 360px"
+                    />
 
                     <div
                       style={{

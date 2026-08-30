@@ -1,6 +1,7 @@
 import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
 import Link from "next/link";
+import ProgramImage from "../../components/ProgramImage";
 
 type Program = {
   id: string;
@@ -146,39 +147,15 @@ export default async function CategoryPage({
                 transition: "all 0.2s ease",
               }}
             >
-              {p.image_url ? (
-                <img
-                  src={p.image_url}
-                  alt={p.title}
-                  style={{
-                    width: "100%",
-                    height: 160,
-                    objectFit: "cover",
-                    borderRadius: 10,
-                    marginBottom: 12,
-                    display: "block",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: 160,
-                    borderRadius: 10,
-                    marginBottom: 12,
-                    background: "#f1f1f1",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#777",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    border: "1px solid #e5e5e5",
-                  }}
-                >
-                  No image available
-                </div>
-              )}
+              <ProgramImage
+                src={p.image_url}
+                alt={p.title}
+                width={640}
+                height={160}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 360px"
+                borderRadius={10}
+                marginBottom={12}
+              />
 
               <div
                 style={{

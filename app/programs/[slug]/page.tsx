@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import StickyApplyBar from "./StickyApplyBar";
 import ApplyNowButton from "./ApplyNowButton";
+import ProgramImage from "../../components/ProgramImage";
 import TrackedProgramLink from "../../components/TrackedProgramLink";
 import { socialLinkItems } from "../../components/socialLinks";
 
@@ -470,14 +471,17 @@ export default async function ProgramDetailPage({
               boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
             }}
           >
-            <img
+            <ProgramImage
               src={program.image_url}
               alt={program.title}
+              width={1200}
+              height={675}
+              sizes="(max-width: 768px) 100vw, 900px"
+              priority
+              borderRadius={0}
+              marginBottom={0}
               style={{
-                width: "100%",
                 height: 320,
-                objectFit: "cover",
-                display: "block",
               }}
             />
           </div>
