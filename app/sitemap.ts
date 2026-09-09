@@ -5,21 +5,25 @@ type SitemapProgram = {
   slug: string | null;
   country: string | null;
   type: string | null;
-  created_at: string | null;
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://app.tripdoc.net";
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("programs")
-    .select("slug,country,type,created_at");
+    .select("slug,country,type");
 
-  const programs = (data || []).filter((p: SitemapProgram) => p.slug);
+  if (error) {
+    throw new Error(`Failed to generate sitemap: ${error.message}`);
+  }
+
+  const programs = (data || []).filter(
+    (p: SitemapProgram) => p.slug
+  );
 
   const programUrls = programs.map((p) => ({
     url: `${baseUrl}/programs/${p.slug}`,
-    lastModified: p.created_at ?? new Date().toISOString(),
   }));
 
   const categories = new Set<string>();
@@ -31,28 +35,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const categoryUrls = Array.from(categories).map((c) => ({
-    url: `${baseUrl}/category/${c}`,
-    lastModified: new Date().toISOString(),
+    url: `${baseUrl}/category/${encodeURIComponent(c)}`,
   }));
 
   const countryUrls = Array.from(countries).map((c) => ({
     url: `${baseUrl}/country/${encodeURIComponent(c)}`,
-    lastModified: new Date().toISOString(),
   }));
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date().toISOString(),
-    },
-    {
-      url: `${baseUrl}/hiring-companies`,
-      lastModified: new Date().toISOString(),
-    },
-    {
-      url: `${baseUrl}/volunteer-match`,
-      lastModified: new Date().toISOString(),
-    },
+    { url: baseUrl },
+    { url: `${baseUrl}/hiring-companies` },
+    { url: `${baseUrl}/volunteer-match` },
     ...categoryUrls,
     ...countryUrls,
     ...programUrls,
