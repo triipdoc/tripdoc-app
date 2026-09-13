@@ -44,6 +44,7 @@ const listStyle = {
   color: "#444",
   lineHeight: 1.9,
   paddingLeft: 22,
+  listStyleType: "disc",
 };
 
 const linkStyle = {
