@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase
       .from("program_public_view")
-      .select("id,title,slug,country,type,publishing_status,availability_status,deadline,deadline_mode")
+      .select("id,title,slug,country,type,publishing_status,availability_status,deadline,deadline_mode,deadline_time,deadline_timezone")
       .or(`title.ilike.%${q}%,country.ilike.%${q}%,type.ilike.%${q}%`)
       .eq("publishing_status", "published")
       .limit(8);
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      suggestions: (data ?? []).filter(isPublicProgramListVisible),
+      suggestions: (data ?? []).filter((program) => isPublicProgramListVisible(program)),
     });
   } catch (error) {
     console.error("Unexpected search suggestion error:", error);

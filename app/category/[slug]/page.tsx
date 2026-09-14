@@ -59,7 +59,7 @@ export default async function CategoryPage({
 
   const { data, error } = await supabase
     .from("program_public_view")
-    .select("id,title,slug,country,funding_type,image_url,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+    .select("id,title,slug,country,funding_type,image_url,verification_status,publishing_status,availability_status,deadline,deadline_mode,deadline_time,deadline_timezone")
     .eq("publishing_status", "published")
     .ilike("type", type)
     .order("created_at", { ascending: false });

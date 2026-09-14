@@ -24,6 +24,7 @@ export default function SafeMarkdown({ content }: SafeMarkdownProps) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       skipHtml
+      unwrapDisallowed
       urlTransform={safeMarkdownUrl}
       allowedElements={[
         "p",
@@ -56,12 +57,12 @@ export default function SafeMarkdown({ content }: SafeMarkdownProps) {
           </p>
         ),
         ul: ({ children }) => (
-          <ul style={{ margin: "0 0 16px", paddingLeft: 24, lineHeight: 1.8 }}>
+          <ul style={{ listStyleType: "disc", margin: "0 0 16px", paddingLeft: 24, lineHeight: 1.8 }}>
             {children}
           </ul>
         ),
         ol: ({ children }) => (
-          <ol style={{ margin: "0 0 16px", paddingLeft: 24, lineHeight: 1.8 }}>
+          <ol style={{ listStyleType: "decimal", margin: "0 0 16px", paddingLeft: 24, lineHeight: 1.8 }}>
             {children}
           </ol>
         ),

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 const PAGE_URL = "https://app.tripdoc.net/about";
@@ -131,17 +132,17 @@ export default function AboutPage() {
       </ul>
 
       <p style={paragraphStyle}>
-        <a href="/programs" style={linkStyle}>
+        <Link href="/programs" style={linkStyle}>
           Browse opportunities
-        </a>
+        </Link>
         {" · "}
-        <a href="/hiring-companies" style={linkStyle}>
+        <Link href="/hiring-companies" style={linkStyle}>
           Explore Hiring Companies
-        </a>
+        </Link>
         {" · "}
-        <a href="/volunteer-match" style={linkStyle}>
+        <Link href="/volunteer-match" style={linkStyle}>
           Try Volunteer Match
-        </a>
+        </Link>
       </p>
 
       <h2 style={headingStyle}>Our verification standards</h2>

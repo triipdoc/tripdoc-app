@@ -1,3 +1,5 @@
+import { normalizeProgramBody } from "../../../../lib/normalizeProgramBody";
+import { requireAdmin } from "../../../../lib/requireAdmin";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-admin";
 import {
@@ -47,109 +49,6 @@ function normalizeFilter(value: string | null, allowed: readonly string[]) {
   return allowed.includes(value) ? value : null;
 }
 
-function toTitleCase(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function normalizeCountry(value: string) {
-  const raw = value.trim().toLowerCase();
-
-  const map: Record<string, string> = {
-    uk: "United Kingdom",
-    "u.k.": "United Kingdom",
-    britain: "United Kingdom",
-    england: "United Kingdom",
-    usa: "United States",
-    us: "United States",
-    "u.s.a.": "United States",
-    "u.s.": "United States",
-    worldwide: "Global",
-    international: "Global",
-    global: "Global",
-    "all round": "Global",
-    commonwealth: "Multiple Countries",
-    "commonwealth countries": "Multiple Countries",
-    multiple: "Multiple Countries",
-    multicountry: "Multiple Countries",
-    "multi country": "Multiple Countries",
-  };
-
-  return map[raw] || toTitleCase(value);
-}
-
-function normalizeType(value: string) {
-  const raw = value.trim().toLowerCase();
-
-  const map: Record<string, string> = {
-    scholarship: "Scholarship",
-    scholarships: "Scholarship",
-    internship: "Internship",
-    internships: "Internship",
-    fellowship: "Fellowship",
-    fellowships: "Fellowship",
-    research: "Research",
-    job: "Job",
-    jobs: "Job",
-    volunteer: "Volunteer",
-    volunteering: "Volunteer",
-    conference: "Conference",
-    grant: "Grant",
-    grants: "Grant",
-    programme: "Programme",
-    program: "Programme",
-    "exchange program": "Exchange Program",
-    "exchange programme": "Exchange Program",
-    training: "Training",
-    "paid internship": "Internship",
-    "research scientist intern": "Internship",
-    "paid student programme": "Programme",
-    "paid student program": "Programme",
-    "daad scholarship fully": "Scholarship",
-  };
-
-  return map[raw] || toTitleCase(value);
-}
-
-function normalizeFunding(value: string) {
-  const raw = value.trim().toLowerCase();
-
-  const map: Record<string, string> = {
-    "full funded": "Fully Funded",
-    "fully funded": "Fully Funded",
-    "fully-funded": "Fully Funded",
-    "partial funded": "Partially Funded",
-    "partially funded": "Partially Funded",
-    funded: "Funded",
-    paid: "Paid",
-    unpaid: "Unpaid",
-    stipend: "Stipend",
-    "paid internship": "Paid",
-    "paid professional program": "Paid",
-    "paid professional programme": "Paid",
-    "tuition waiver": "Tuition Waiver",
-  };
-
-  return map[raw] || toTitleCase(value);
-}
-
-function normalizeProgramBody(body: Record<string, unknown> | null) {
-  return {
-    ...(body || {}),
-    country: normalizeText(body?.country)
-      ? normalizeCountry(normalizeText(body?.country))
-      : "",
-    type: normalizeText(body?.type) ? normalizeType(normalizeText(body?.type)) : "",
-    funding_type: normalizeText(body?.funding_type)
-      ? normalizeFunding(normalizeText(body?.funding_type))
-      : "",
-  };
-}
-
 function toProgramWritePayload(payload: ReturnType<typeof validateProgramAdminPayload>["payload"]) {
   return {
     title: payload.title,
@@ -189,6 +88,7 @@ function toProgramWritePayload(payload: ReturnType<typeof validateProgramAdminPa
 }
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req); if (denied) return denied;
   try {
     const search = normalizeText(req.nextUrl.searchParams.get("search"));
     const publishingStatus = normalizeFilter(
@@ -217,7 +117,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin.from("programs").select("*", { count: "exact" });
 
     if (search) {
-      const escaped = search.replace(/[%_]/g, "");
+      const escaped = search.replace(/[^\p{L}\p{N} -]/gu, "").slice(0, 150);
       query = query.or(
         [
           `title.ilike.%${escaped}%`,
@@ -238,7 +138,7 @@ export async function GET(req: NextRequest) {
     if (availabilityStatus) query = query.eq("availability_status", availabilityStatus);
 
     if (deadlineView === "expired") {
-      query = query.lt("deadline", new Date().toISOString().slice(0, 10));
+      query = query.eq("deadline_mode", "fixed_date").lt("deadline", new Date(Date.now() - 86400000).toISOString().slice(0, 10));
     }
 
     switch (sortBy) {
@@ -297,6 +197,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req); if (denied) return denied;
   try {
     const body = await req.json().catch(() => null);
     const normalizedBody = normalizeProgramBody(body);
@@ -329,7 +230,7 @@ export async function POST(req: NextRequest) {
       const { data: possibleDuplicates } = await supabaseAdmin
         .from("programs")
         .select("id,title,slug")
-        .ilike("title", payload.title)
+        .eq("title", payload.title)
         .eq("country", payload.country)
         .limit(3);
 
@@ -347,17 +248,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      if (error.code === "23505") return NextResponse.json({ error: "This slug already exists." }, { status: 409 });
       console.error("Admin programs POST error:", error);
       return NextResponse.json({ error: "Failed to create program." }, { status: 500 });
     }
-
-    await supabaseAdmin.from("program_change_history").insert({
-      program_id: data.id,
-      actor: "tripdoc-admin",
-      action: "create",
-      changed_fields: Object.keys(writePayload),
-      new_values: writePayload,
-    });
 
     return NextResponse.json({ success: true, program: data, warnings });
   } catch (error) {

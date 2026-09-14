@@ -186,7 +186,7 @@ export default async function ProgramsPage({
   ].includes(sort);
 
   const baseSelect =
-    "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,publishing_status,availability_status,deadline_mode,created_at,featured";
+    "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,publishing_status,availability_status,deadline_mode,deadline_time,deadline_timezone,created_at,featured";
 
   if (!needsAnalyticsSort) {
     let query = supabase
@@ -219,7 +219,7 @@ export default async function ProgramsPage({
     }
 
     const allPrograms = orderProgramsBySort(
-      ((data || []) as Program[]).filter(isPublicProgramListVisible),
+      ((data || []) as Program[]).filter((program) => isPublicProgramListVisible(program)),
       sort
     );
     const totalPrograms = allPrograms.length;

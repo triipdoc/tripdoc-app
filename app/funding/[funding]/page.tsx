@@ -71,7 +71,7 @@ export default async function FundingPage({
   const { data, error } = await supabase
     .from("program_public_view")
     .select(
-      "id,title,slug,country,type,funding_type,deadline,image_url,verification_status,publishing_status,availability_status,deadline_mode,created_at"
+      "id,title,slug,country,type,funding_type,deadline,image_url,verification_status,publishing_status,availability_status,deadline_mode,deadline_time,deadline_timezone,created_at"
     )
     .eq("publishing_status", "published")
     .ilike("funding_type", formattedFunding)
@@ -81,7 +81,7 @@ export default async function FundingPage({
     console.error("Funding page error:", error.message);
   }
 
-  const programs = ((data || []) as Program[]).filter(isPublicProgramListVisible);
+  const programs = ((data || []) as Program[]).filter((program) => isPublicProgramListVisible(program));
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>

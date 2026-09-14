@@ -63,7 +63,7 @@ export default async function CountryPage({
 
   const { data, error } = await supabase
     .from("program_public_view")
-    .select("id,title,slug,country,funding_type,image_url,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+    .select("id,title,slug,country,funding_type,image_url,verification_status,publishing_status,availability_status,deadline,deadline_mode,deadline_time,deadline_timezone")
     .eq("publishing_status", "published")
     .eq("country", label)
     .order("created_at", { ascending: false });

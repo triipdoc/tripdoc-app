@@ -310,7 +310,7 @@ export default async function Home() {
   const { data, error } = await supabase
     .from("program_public_view")
     .select(
-      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,publishing_status,availability_status,deadline_mode,created_at,featured"
+      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,publishing_status,availability_status,deadline_mode,deadline_time,deadline_timezone,created_at,featured"
     )
     .eq("publishing_status", "published")
     .order("created_at", { ascending: false });
@@ -336,9 +336,9 @@ export default async function Home() {
     );
   });
 
-  const verifiedActivePrograms = programs.filter(isPublicProgramListVisible);
+  const verifiedActivePrograms = programs.filter((program) => isPublicProgramListVisible(program));
 
-  const totalVerifiedPrograms = verifiedActivePrograms.length;
+  const totalVerifiedPrograms = verifiedActivePrograms.filter(p => p.verification_status === "verified").length;
 
   const totalActivePrograms = verifiedActivePrograms.length;
 
@@ -540,7 +540,7 @@ export default async function Home() {
             }}
           >
             Scholarships, internships, fellowships, and research programs —
-            all verified with official links to help you apply with confidence.
+            with source links and review information to help you assess your options.
           </p>
 
           <div

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 
-const ADMIN_COOKIE_NAME = "tripdoc_admin_auth";
-const ADMIN_COOKIE_VALUE = "yes";
-const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours
+import { ADMIN_COOKIE_NAME, ADMIN_SESSION_SECONDS, createAdminSession, isSameOriginRequest } from "../../../lib/adminSession";
+import { timingSafeEqual, createHash } from "node:crypto";
+import { checkAdminLoginLimit, clearAdminLoginFailures, loginClientKey, recordAdminLoginFailure } from "../../../lib/adminLoginRateLimit";
 
 export async function POST(req: Request) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Cross-site request rejected." }, { status: 403 });
   try {
+    const clientKey = loginClientKey(req);
+    const limit = checkAdminLoginLimit(clientKey);
+    if (!limit.allowed) return NextResponse.json({ error: "Too many attempts. Wait before trying again." }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } });
     const body = await req.json().catch(() => null);
     const password =
       typeof body?.password === "string" ? body.password.trim() : "";
@@ -26,21 +30,23 @@ export async function POST(req: Request) {
       );
     }
 
-    if (password !== adminPassword) {
+    if (!timingSafeEqual(createHash("sha256").update(password).digest(), createHash("sha256").update(adminPassword).digest())) {
+      recordAdminLoginFailure(clientKey);
       return NextResponse.json(
         { error: "Incorrect password." },
         { status: 401 }
       );
     }
 
+    clearAdminLoginFailures(clientKey);
     const response = NextResponse.json({ success: true });
 
-    response.cookies.set(ADMIN_COOKIE_NAME, ADMIN_COOKIE_VALUE, {
+    response.cookies.set(ADMIN_COOKIE_NAME, await createAdminSession(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: ADMIN_COOKIE_MAX_AGE,
+      maxAge: ADMIN_SESSION_SECONDS,
     });
 
     return response;

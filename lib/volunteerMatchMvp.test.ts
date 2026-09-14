@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { NextRequest } from "next/server";
-import { middleware } from "../middleware";
+import { proxy as middleware } from "../proxy";
 import {
   buildHumanReviewRequestInsertPayload,
   buildVolunteerMatchSummary,
@@ -583,9 +583,9 @@ test("human-review admin notes validation trims notes and rejects invalid status
   );
 });
 
-test("human-review admin API is protected by existing middleware", () => {
+test("human-review admin API is protected by existing middleware", async () => {
   const request = new NextRequest("https://tripdoc.test/api/admin/human-reviews");
-  const response = middleware(request);
+  const response = await middleware(request);
 
   assert.equal(response.status, 401);
 });

@@ -1,3 +1,4 @@
+import { requireAdmin } from "../../../lib/requireAdmin";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../lib/supabase-admin";
 import { getVolunteerSourceLabel } from "../../../lib/volunteerMatchMvp";
@@ -87,6 +88,7 @@ function getRate(numerator: number, denominator: number) {
 }
 
 export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request); if (denied) return denied;
   try {
     const rangeParam = request.nextUrl.searchParams.get("range");
     const range: AnalyticsRange =

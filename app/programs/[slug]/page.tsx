@@ -157,7 +157,7 @@ export async function generateMetadata({
   const pageUrl = `${SITE_URL}/programs/${data.slug || slug}`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords: [
       data.title,
@@ -215,7 +215,7 @@ async function getRelatedPrograms(program: Program) {
 
     const { data } = await supabase
       .from("program_public_view")
-      .select("id,title,slug,country,funding_type,type,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+      .select("id,title,slug,country,funding_type,type,verification_status,publishing_status,availability_status,deadline,deadline_mode,deadline_time,deadline_timezone")
       .eq("publishing_status", "published")
       .neq("id", program.id)
       .eq(field, value)
@@ -238,7 +238,7 @@ async function getRelatedPrograms(program: Program) {
   if (relatedPrograms.length < 3) {
     const { data } = await supabase
       .from("program_public_view")
-      .select("id,title,slug,country,funding_type,type,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+      .select("id,title,slug,country,funding_type,type,verification_status,publishing_status,availability_status,deadline,deadline_mode,deadline_time,deadline_timezone")
       .eq("publishing_status", "published")
       .neq("id", program.id)
       .order("created_at", { ascending: false })
@@ -263,7 +263,7 @@ export default async function ProgramDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  let program = await getProgramBySlug(slug);
+  const program = await getProgramBySlug(slug);
 
   if (!program) {
     const redirectedSlug = await getRedirectedSlug(slug);
@@ -282,11 +282,12 @@ export default async function ProgramDetailPage({
   const hasOfficialUrl = Boolean(program.official_url);
   const deadlinePassed = isDeadlinePassed(
     program.deadline,
-    program.deadline_mode || "fixed_date"
+    program.deadline_mode || "fixed_date", new Date(), program.deadline_time, program.deadline_timezone
   );
+  const inactive = deadlinePassed || program.availability_status === "closed" || program.publishing_status === "archived";
   const isWeltwaertsSouthNorth =
     program.slug === "weltwaerts-south-north-volunteer-germany";
-  const officialCtaLabel = isWeltwaertsSouthNorth
+  const officialCtaLabel = inactive ? "View official source (archived or closed)" : isWeltwaertsSouthNorth
     ? "Find your country's official weltwaerts organisation"
     : "Apply Now";
 
@@ -463,6 +464,7 @@ export default async function ProgramDetailPage({
           </div>
         </section>
 
+        {inactive && <p role="status" style={{ padding: 16, background: "#fff4e5", borderRadius: 10 }}>This listing is archived or closed. It is retained for reference; check the official source for any future call.</p>}
         <div style={{ marginBottom: 20 }}>
           {program.verification_status === "verified" ? (
             <span
@@ -588,7 +590,7 @@ export default async function ProgramDetailPage({
             }}
           >
             <h2 style={{ marginTop: 0, marginBottom: 14, fontSize: 22 }}>
-              Application Steps
+              {inactive ? "Application steps from this call (for reference)" : "Application Steps"}
             </h2>
             <div style={{ display: "grid", gap: 12 }}>
               {applicationSteps.map((step, index) => (
@@ -875,7 +877,7 @@ export default async function ProgramDetailPage({
         title={program.title}
         url={program.official_url}
         label={
-          isWeltwaertsSouthNorth ? "Find official organisation" : "Apply Now"
+          inactive ? "View official source" : isWeltwaertsSouthNorth ? "Find official organisation" : "Apply Now"
         }
       />
     </main>

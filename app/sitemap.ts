@@ -17,14 +17,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data, error } = await supabase
     .from("program_public_view")
-    .select("slug,country,type,publishing_status,availability_status,deadline,deadline_mode")
+    .select("slug,country,type,publishing_status,availability_status,deadline,deadline_mode,deadline_time,deadline_timezone")
     .eq("publishing_status", "published");
 
   if (error) {
-    throw new Error(`Failed to generate sitemap: ${error.message}`);
+    console.error("Sitemap program query failed; returning static URLs:", error.message);
   }
 
-  const programs = (data || []).filter(
+  const programs = (error ? [] : data || []).filter(
     (p: SitemapProgram) => p.slug && isPublicProgramListVisible(p)
   );
 

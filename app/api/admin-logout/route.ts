@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
-const ADMIN_COOKIE_NAME = "tripdoc_admin_auth";
+import { ADMIN_COOKIE_NAME, isSameOriginRequest } from "../../../lib/adminSession";
 
-export async function POST() {
+export async function POST(req: Request) {
+  if (!isSameOriginRequest(req)) return NextResponse.json({ error: "Cross-site request rejected." }, { status: 403 });
   const response = NextResponse.json({ success: true });
 
   response.cookies.set(ADMIN_COOKIE_NAME, "", {

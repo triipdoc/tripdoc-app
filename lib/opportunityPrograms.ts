@@ -72,6 +72,8 @@ export type ProgramVisibilityRecord = {
   availability_status?: string | null;
   deadline?: string | null;
   deadline_mode?: string | null;
+  deadline_time?: string | null;
+  deadline_timezone?: string | null;
 };
 
 export type PublicProgramRecord<T extends Record<string, unknown>> = Omit<
@@ -105,7 +107,7 @@ export function isSafeHttpUrl(value: string) {
 
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password;
   } catch {
     return false;
   }
@@ -219,20 +221,30 @@ function normalizeNumber(value: unknown) {
 }
 
 export function isDateOnly(value: string | null) {
-  return !value || /^\d{4}-\d{2}-\d{2}$/.test(value);
+  return !value || (/^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value);
 }
 
+// A date without a published timezone stays active until that date has ended
+// everywhere (UTC-12). This grace period avoids inventing an exact closing time.
 export function isDeadlinePassed(
   deadline: string | null | undefined,
   deadlineMode: string | null | undefined,
-  now = new Date()
+  now = new Date(),
+  time?: string | null,
+  timezone?: string | null
 ) {
-  if (!deadline || deadlineMode === "rolling" || deadlineMode === "unknown") {
-    return false;
-  }
-
-  const today = now.toISOString().slice(0, 10);
-  return deadline < today;
+  if (!deadline || !isDateOnly(deadline) || deadlineMode === "rolling" || deadlineMode === "unknown") return false;
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone || "Etc/GMT+12", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+    }).formatToParts(now);
+    const part = (name: string) => parts.find(p => p.type === name)?.value;
+    const date = `${part("year")}-${part("month")}-${part("day")}`;
+    const clock = `${part("hour")}:${part("minute")}:${part("second")}`;
+    const closing = time ? (time.length === 5 ? `${time}:00` : time) : "23:59:59";
+    return date > deadline || (date === deadline && clock > closing);
+  } catch { return false; }
 }
 
 export function isPublicProgramDetailVisible(program: ProgramVisibilityRecord) {
@@ -247,17 +259,18 @@ export function isPublicProgramDetailVisible(program: ProgramVisibilityRecord) {
 
 export function isPublicProgramListVisible(
   program: ProgramVisibilityRecord,
-  now = new Date()
+  now: Date | number = new Date()
 ) {
   if (!isPublicProgramDetailVisible(program)) return false;
   if (program.publishing_status === "archived") return false;
   if (program.availability_status === "closed") return false;
-  return !isDeadlinePassed(program.deadline, program.deadline_mode || "fixed_date", now);
+  return !isDeadlinePassed(program.deadline, program.deadline_mode || "fixed_date", now instanceof Date ? now : new Date(), program.deadline_time, program.deadline_timezone);
 }
 
 export function omitPrivateProgramFields<T extends Record<string, unknown>>(
   program: T
 ): PublicProgramRecord<T> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { private_reviewer_notes: _privateReviewerNotes, ...publicProgram } = program;
   return publicProgram;
 }
@@ -319,10 +332,33 @@ export function validateProgramAdminPayload(input: unknown) {
 
   const errors: string[] = [];
   const warnings: string[] = [];
+  const enumFields = { publishing_status: publishingStatusValues, verification_status: verificationStatusValues,
+    availability_status: availabilityStatusValues, deadline_mode: deadlineModeValues, sponsorship_status: sponsorshipStatusValues };
+  for (const [field, allowed] of Object.entries(enumFields)) {
+    if (body[field] != null && !(allowed as readonly unknown[]).includes(body[field])) errors.push(`Invalid ${field.replaceAll("_", " ")}.`);
+  }
+  if (body.additional_application_steps != null && !z.array(applicationStepSchema).max(30).safeParse(body.additional_application_steps).success) errors.push("Application steps must be a list of at most 30 valid steps.");
+  if (body.official_source_links != null && !z.array(sourceLinkSchema).max(30).safeParse(body.official_source_links).success) errors.push("Official sources must be a list of at most 30 valid sources.");
+  if (body.featured != null && typeof body.featured !== "boolean") errors.push("Featured must be true or false.");
+  if (body.funding_amount != null && body.funding_amount !== "" && (payload.funding_amount === null || payload.funding_amount > 9999999999.99)) errors.push("Funding amount must be a non-negative number below 10 billion.");
+  if (payload.funding_currency && !/^[A-Za-z]{3}$/.test(payload.funding_currency)) errors.push("Use a three-letter funding currency, for example USD.");
+  if (payload.funding_currency) payload.funding_currency = payload.funding_currency.toUpperCase();
+  if (payload.deadline_time && !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(payload.deadline_time)) errors.push("Deadline time must be HH:MM in 24-hour format.");
+  if (payload.deadline_time && !payload.deadline_timezone) errors.push("A closing time requires the official timezone.");
+  if (payload.deadline_timezone) {
+    try { new Intl.DateTimeFormat("en", { timeZone: payload.deadline_timezone }).format(); }
+    catch { errors.push("Use a valid timezone, for example Europe/Berlin or Asia/Seoul."); }
+  }
+  if (verifiedAt && (!/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(verifiedAt) || !isDateOnly(verifiedAt.slice(0,10)) || Number.isNaN(Date.parse(verifiedAt)) || Date.parse(verifiedAt) > Date.now())) errors.push("Verification date must be a valid date that is not in the future.");
+  if (payload.sponsorship_status === "confirmed" && (!payload.sponsorship_evidence || !sponsorshipSourceUrl)) errors.push("Confirmed sponsorship requires vacancy-specific evidence and its source URL.");
+  if (title.length > 300 || slug.length > 250) errors.push("Title or slug is too long.");
+  if ((payload.description?.length || 0) > 100000) errors.push("Description must be under 100,000 characters.");
+  if (payload.image_url && !payload.image_alt) warnings.push("Add descriptive image alternative text.");
+
 
   if (!title) errors.push("Title is required.");
   if (!slug) errors.push("Slug is required.");
-  if (!payload.type) errors.push("Type is required.");
+  if (publishingStatus !== "draft" && !payload.type) errors.push("Type is required before publishing.");
 
   if (officialUrl && !isSafeHttpUrl(officialUrl)) {
     errors.push("Primary application URL must be a valid http/https link.");
@@ -358,12 +394,12 @@ export function validateProgramAdminPayload(input: unknown) {
 
   if (publishingStatus !== "draft") {
     if (!payload.country) warnings.push("Country is missing.");
-    if (!payload.description) warnings.push("Description is missing.");
+    if (!payload.description) errors.push("Description is required before publishing.");
     if (!officialUrl && applicationSteps.length === 0) {
-      warnings.push("Application instructions are missing.");
+      if (availabilityStatus !== "closed" && publishingStatus === "published") errors.push("Add the primary application URL or application steps before publishing.");
     }
     if (deadlineMode === "fixed_date" && !deadline) {
-      warnings.push("Deadline mode is fixed date, but no deadline date is set.");
+      errors.push("Set the deadline date or choose rolling / unknown.");
     }
   }
 
@@ -375,7 +411,7 @@ export function validateProgramAdminPayload(input: unknown) {
     }
   }
 
-  if (deadline && isDeadlinePassed(deadline, deadlineMode)) {
+  if (deadline && isDeadlinePassed(deadline, deadlineMode, new Date(), payload.deadline_time, payload.deadline_timezone)) {
     warnings.push("Deadline has passed. The opportunity should be marked closed or archived.");
   }
 

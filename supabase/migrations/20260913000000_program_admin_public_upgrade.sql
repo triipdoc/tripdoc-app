@@ -1,10 +1,25 @@
--- TripDoc opportunity admin/public upgrade.
--- Deployment order:
--- 1. Apply this migration.
--- 2. Deploy the application code that reads/writes the new fields.
--- 3. Review legacy records in the admin before changing slugs or archival state.
+-- TripDoc admin upgrade. Run on a STAGING database first.
+-- Coordinate migration and app deployment in a maintenance window: legacy app
+-- queries to programs stop working once its public grants are revoked.
+-- Back up the database/schema and code before applying; see INSTALL-TRIPDOC.md.
+begin;
+
+-- The supplied application uses UUID opportunity IDs and text status fields.
+-- Stop rather than silently rewrite a different live schema.
+do $$
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='programs' and column_name='id' and data_type='uuid') then
+    raise exception 'Expected programs.id uuid. Review the live schema before applying this migration.';
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='programs' and column_name='verification_status' and data_type in ('text','character varying')) then
+    raise exception 'Expected text verification_status. Review existing enum/check constraints first.';
+  end if;
+end $$;
+-- Remove the legacy status check BEFORE normalizing pending to needs_review.
+alter table public.programs drop constraint if exists programs_verification_status_check;
 
 alter table public.programs
+  add column if not exists admin_version integer not null default 1,
   add column if not exists organisation text,
   add column if not exists publishing_status text,
   add column if not exists availability_status text,
@@ -53,7 +68,7 @@ where verification_status is distinct from case
 
 update public.programs
 set availability_status = case
-    when deadline is not null and deadline < current_date then 'closed'
+    when deadline is not null and deadline < current_date - 1 then 'closed'
     else 'unknown'
   end
 where availability_status is null;
@@ -156,10 +171,10 @@ alter table public.program_change_history enable row level security;
 drop policy if exists "Public insert programs" on public.programs;
 drop policy if exists "Public update programs" on public.programs;
 drop policy if exists "Public delete programs" on public.programs;
-drop policy if exists "Public read programs" on public.programs;
-drop policy if exists "Public read public programs" on public.programs;
+-- Existing public SELECT policies stay temporarily for a zero-downtime app rollout.
+-- The finalize migration removes them after the new app uses program_public_view.
 
-create or replace view public.program_public_view as
+create or replace view public.program_public_view with (security_barrier = true) as
 select
   id,
   title,
@@ -200,7 +215,7 @@ select
 from public.programs
 where publishing_status in ('published', 'archived');
 
-revoke all on public.program_public_view from anon, authenticated;
+revoke all on public.program_public_view from public, anon, authenticated;
 grant select on public.program_public_view to anon, authenticated;
 
 drop policy if exists "Public read program slug redirects" on public.program_slug_redirects;
@@ -221,12 +236,56 @@ create policy "Public cannot read program change history" on public.program_chan
   to anon, authenticated
   using (false);
 
-revoke insert, update, delete on public.programs from anon, authenticated;
-revoke select on public.programs from anon, authenticated;
-revoke all on public.program_change_history from anon, authenticated;
-revoke all on public.program_slug_redirects from anon, authenticated;
+revoke insert, update, delete on public.programs from public, anon, authenticated;
+revoke all on public.program_change_history from public, anon, authenticated;
+revoke all on public.program_slug_redirects from public, anon, authenticated;
 
 grant select on public.program_slug_redirects to anon, authenticated;
 grant all on public.programs to service_role;
 grant all on public.program_slug_redirects to service_role;
 grant all on public.program_change_history to service_role;
+
+-- Concurrent saves use admin_version. History is atomic with each successful write.
+create or replace function public.program_admin_before_write()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'UPDATE' then
+    if old.slug is not null and new.slug is distinct from old.slug then
+      raise exception 'Existing opportunity slugs are locked';
+    end if;
+    new.admin_version := old.admin_version + 1;
+  else
+    new.admin_version := 1;
+  end if;
+  return new;
+end $$;
+create or replace function public.program_admin_audit()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare previous jsonb; current_values jsonb; fields text[];
+begin
+  previous := case when tg_op = 'INSERT' then '{}'::jsonb else to_jsonb(old) end;
+  current_values := case when tg_op = 'DELETE' then '{}'::jsonb else to_jsonb(new) end;
+  select coalesce(array_agg(k order by k), '{}'::text[]) into fields
+  from (select jsonb_object_keys(previous || current_values) k) keys
+  where k <> 'admin_version' and (previous -> k) is distinct from (current_values -> k);
+  if cardinality(fields) > 0 then
+    insert into public.program_change_history(program_id, actor, action, changed_fields, previous_values, new_values)
+    values (case when tg_op = 'DELETE' then null else new.id end, 'shared-admin',
+      case tg_op when 'INSERT' then 'create' when 'UPDATE' then 'update' else 'delete' end,
+      fields, previous, current_values);
+  end if;
+  return null;
+end $$;
+revoke all on function public.program_admin_before_write() from public, anon, authenticated;
+revoke all on function public.program_admin_audit() from public, anon, authenticated;
+drop trigger if exists program_admin_before_write on public.programs;
+create trigger program_admin_before_write before insert or update on public.programs for each row execute function public.program_admin_before_write();
+drop trigger if exists program_admin_audit on public.programs;
+create trigger program_admin_audit after insert or update or delete on public.programs for each row execute function public.program_admin_audit();
+
+-- Enforce slug uniqueness, including a concurrent create race. This deliberately
+-- stops on existing duplicate slugs so an operator can resolve them explicitly.
+create unique index if not exists programs_admin_slug_unique on public.programs(slug);
+grant select on public.program_public_view to service_role;
+
+commit;
