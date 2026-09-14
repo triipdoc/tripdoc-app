@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import { isPublicProgramListVisible } from "../lib/opportunityPrograms";
 import ProgramsClient from "./programs/ProgramsClient";
 import HorizontalRow from "./components/HorizontalRow";
 import HeroSearch from "./components/HeroSearch";
@@ -19,6 +20,9 @@ type Program = {
   official_url: string | null;
   image_url: string | null;
   verification_status: string | null;
+  publishing_status?: string | null;
+  availability_status?: string | null;
+  deadline_mode?: string | null;
   created_at?: string | null;
   featured?: boolean | null;
 };
@@ -130,8 +134,7 @@ function pickProgramsByRank(
     if (!program) continue;
     if (excludeIds.has(program.id)) continue;
     if (!program.slug) continue;
-    if (program.verification_status !== "verified") continue;
-    if (!isNotExpired(program.deadline)) continue;
+    if (!isPublicProgramListVisible(program)) continue;
 
     results.push(program);
 
@@ -305,10 +308,11 @@ export default async function Home() {
   thirtyDaysAgo.setDate(now.getDate() - 30);
 
   const { data, error } = await supabase
-    .from("programs")
+    .from("program_public_view")
     .select(
-      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,created_at,featured"
+      "id,title,slug,type,country,funding_type,deadline,official_url,image_url,verification_status,publishing_status,availability_status,deadline_mode,created_at,featured"
     )
+    .eq("publishing_status", "published")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -332,13 +336,9 @@ export default async function Home() {
     );
   });
 
-  const verifiedActivePrograms = programs.filter(
-    (p) => p.verification_status === "verified" && isNotExpired(p.deadline)
-  );
+  const verifiedActivePrograms = programs.filter(isPublicProgramListVisible);
 
-  const totalVerifiedPrograms = programs.filter(
-    (p) => p.verification_status === "verified"
-  ).length;
+  const totalVerifiedPrograms = verifiedActivePrograms.length;
 
   const totalActivePrograms = verifiedActivePrograms.length;
 

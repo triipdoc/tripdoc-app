@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "../../../lib/supabase";
+import { isPublicProgramListVisible } from "../../../lib/opportunityPrograms";
 
 export async function GET(request: Request) {
   try {
@@ -11,10 +12,10 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await supabase
-      .from("programs")
-      .select("id, title, slug, country, type")
+      .from("program_public_view")
+      .select("id,title,slug,country,type,publishing_status,availability_status,deadline,deadline_mode")
       .or(`title.ilike.%${q}%,country.ilike.%${q}%,type.ilike.%${q}%`)
-      .eq("verification_status", "verified")
+      .eq("publishing_status", "published")
       .limit(8);
 
     if (error) {
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      suggestions: data ?? [],
+      suggestions: (data ?? []).filter(isPublicProgramListVisible),
     });
   } catch (error) {
     console.error("Unexpected search suggestion error:", error);

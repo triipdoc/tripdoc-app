@@ -1,28 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../../lib/supabase-admin";
-
-type VerificationStatus = "verified" | "pending";
-
-function generateSlug(text: string) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function isValidUrl(value: string) {
-  if (!value.trim()) return true;
-
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
+import {
+  generateOpportunitySlug,
+  isPublicProgramDetailVisible,
+  validateProgramAdminPayload,
+} from "../../../../../lib/opportunityPrograms";
 
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -118,6 +100,63 @@ function normalizeFunding(value: string) {
   return map[raw] || toTitleCase(value);
 }
 
+function normalizeProgramBody(body: Record<string, unknown> | null) {
+  return {
+    ...(body || {}),
+    country: normalizeText(body?.country)
+      ? normalizeCountry(normalizeText(body?.country))
+      : "",
+    type: normalizeText(body?.type) ? normalizeType(normalizeText(body?.type)) : "",
+    funding_type: normalizeText(body?.funding_type)
+      ? normalizeFunding(normalizeText(body?.funding_type))
+      : "",
+  };
+}
+
+function toProgramWritePayload(payload: ReturnType<typeof validateProgramAdminPayload>["payload"]) {
+  return {
+    title: payload.title,
+    slug: payload.slug,
+    organisation: payload.organisation,
+    country: payload.country,
+    type: payload.type,
+    funding_type: payload.funding_type,
+    deadline: payload.deadline,
+    deadline_mode: payload.deadline_mode,
+    deadline_time: payload.deadline_time,
+    deadline_timezone: payload.deadline_timezone,
+    official_url: payload.official_url,
+    additional_application_steps: payload.additional_application_steps,
+    image_url: payload.image_url,
+    image_alt: payload.image_alt,
+    description: payload.description,
+    publishing_status: payload.publishing_status,
+    verification_status: payload.verification_status,
+    availability_status: payload.availability_status,
+    featured: payload.featured,
+    funding_amount: payload.funding_amount,
+    funding_currency: payload.funding_currency,
+    funding_coverage: payload.funding_coverage,
+    applicant_costs: payload.applicant_costs,
+    official_source_links: payload.official_source_links,
+    reviewer_name: payload.reviewer_name,
+    verified_at: payload.verified_at,
+    evidence_notes: payload.evidence_notes,
+    private_reviewer_notes: payload.private_reviewer_notes,
+    sponsorship_status: payload.sponsorship_status,
+    sponsorship_evidence: payload.sponsorship_evidence,
+    sponsorship_source_url: payload.sponsorship_source_url,
+    seo_title: payload.seo_title,
+    seo_description: payload.seo_description,
+  };
+}
+
+function changedFields(previous: Record<string, unknown>, next: Record<string, unknown>) {
+  return Object.keys(next).filter((key) => {
+    return JSON.stringify(previous[key] ?? null) !== JSON.stringify(next[key] ?? null);
+  });
+}
+
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -126,70 +165,28 @@ export async function PATCH(
     const { id } = await context.params;
     const body = await req.json().catch(() => null);
 
-    const title = normalizeText(body?.title);
-    const slugInput = normalizeText(body?.slug);
-    const slug = generateSlug(slugInput || title);
-
-    const country = normalizeCountry(normalizeText(body?.country));
-    const type = normalizeType(normalizeText(body?.type));
-    const fundingTypeRaw = normalizeText(body?.funding_type);
-    const fundingType = fundingTypeRaw ? normalizeFunding(fundingTypeRaw) : "";
-
-    const deadline = normalizeText(body?.deadline);
-    const officialUrl = normalizeText(body?.official_url);
-    const imageUrl = normalizeText(body?.image_url);
-    const description = normalizeText(body?.description);
-    const verificationStatus = normalizeText(
-      body?.verification_status
-    ) as VerificationStatus;
-    const featured = Boolean(body?.featured);
-
     if (!id) {
+      return NextResponse.json({ error: "Program ID is required." }, { status: 400 });
+    }
+
+    const { data: existingProgram, error: existingError } = await supabaseAdmin
+      .from("programs")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (existingError || !existingProgram) {
+      return NextResponse.json({ error: "Program not found." }, { status: 404 });
+    }
+
+    const normalizedBody = normalizeProgramBody(body);
+    const validation = validateProgramAdminPayload(normalizedBody);
+    const { payload, errors, warnings } = validation;
+    payload.slug = payload.slug || generateOpportunitySlug(payload.title);
+
+    if (errors.length > 0) {
       return NextResponse.json(
-        { error: "Program ID is required." },
-        { status: 400 }
-      );
-    }
-
-    if (!title) {
-      return NextResponse.json({ error: "Title is required." }, { status: 400 });
-    }
-
-    if (!slug) {
-      return NextResponse.json({ error: "Slug is required." }, { status: 400 });
-    }
-
-    if (!country) {
-      return NextResponse.json(
-        { error: "Country is required." },
-        { status: 400 }
-      );
-    }
-
-    if (!type) {
-      return NextResponse.json({ error: "Type is required." }, { status: 400 });
-    }
-
-    if (
-      verificationStatus !== "verified" &&
-      verificationStatus !== "pending"
-    ) {
-      return NextResponse.json(
-        { error: "Verification status must be verified or pending." },
-        { status: 400 }
-      );
-    }
-
-    if (officialUrl && !isValidUrl(officialUrl)) {
-      return NextResponse.json(
-        { error: "Official URL must be a valid http/https link." },
-        { status: 400 }
-      );
-    }
-
-    if (imageUrl && !isValidUrl(imageUrl)) {
-      return NextResponse.json(
-        { error: "Image URL must be a valid http/https link." },
+        { error: errors.join(" "), warnings },
         { status: 400 }
       );
     }
@@ -197,52 +194,61 @@ export async function PATCH(
     const { data: existingSlug, error: slugCheckError } = await supabaseAdmin
       .from("programs")
       .select("id")
-      .eq("slug", slug)
+      .eq("slug", payload.slug)
       .neq("id", id)
       .limit(1);
 
     if (slugCheckError) {
-      return NextResponse.json(
-        { error: "Failed to validate slug." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to validate slug." }, { status: 500 });
     }
 
     if (existingSlug && existingSlug.length > 0) {
-      return NextResponse.json(
-        { error: "This slug already exists." },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "This slug already exists." }, { status: 409 });
     }
+
+    const writePayload = toProgramWritePayload(payload);
+    const fields = changedFields(existingProgram, writePayload);
 
     const { data, error } = await supabaseAdmin
       .from("programs")
-      .update({
-        title,
-        slug,
-        country,
-        type,
-        funding_type: fundingType || null,
-        deadline: deadline || null,
-        official_url: officialUrl || null,
-        image_url: imageUrl || null,
-        description: description || null,
-        verification_status: verificationStatus,
-        featured,
-      })
+      .update(writePayload)
       .eq("id", id)
       .select()
       .single();
 
     if (error) {
       console.error("Admin program PATCH error:", error);
-      return NextResponse.json(
-        { error: "Failed to update program." },
-        { status: 500 }
+      return NextResponse.json({ error: "Failed to update program." }, { status: 500 });
+    }
+
+    if (
+      existingProgram.slug &&
+      existingProgram.slug !== payload.slug &&
+      isPublicProgramDetailVisible(existingProgram)
+    ) {
+      await supabaseAdmin.from("program_slug_redirects").upsert(
+        {
+          old_slug: existingProgram.slug,
+          program_id: id,
+        },
+        { onConflict: "old_slug" }
       );
     }
 
-    return NextResponse.json({ success: true, program: data });
+    if (fields.length > 0) {
+      await supabaseAdmin.from("program_change_history").insert({
+        program_id: id,
+        actor: "tripdoc-admin",
+        action: "update",
+        changed_fields: fields,
+        previous_values: Object.fromEntries(
+          fields.map((field) => [field, existingProgram[field] ?? null])
+        ),
+        new_values: Object.fromEntries(fields.map((field) => [field, writePayload[field]])),
+      });
+    }
+
+    return NextResponse.json({ success: true, program: data, warnings });
   } catch (error) {
     console.error("Admin program PATCH server error:", error);
     return NextResponse.json({ error: "Server error." }, { status: 500 });
@@ -257,20 +263,30 @@ export async function DELETE(
     const { id } = await context.params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Program ID is required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Program ID is required." }, { status: 400 });
+    }
+
+    const { data: existingProgram } = await supabaseAdmin
+      .from("programs")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (existingProgram) {
+      await supabaseAdmin.from("program_change_history").insert({
+        program_id: id,
+        actor: "tripdoc-admin",
+        action: "delete",
+        changed_fields: Object.keys(existingProgram),
+        previous_values: existingProgram,
+      });
     }
 
     const { error } = await supabaseAdmin.from("programs").delete().eq("id", id);
 
     if (error) {
       console.error("Admin program DELETE error:", error);
-      return NextResponse.json(
-        { error: "Failed to delete program." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to delete program." }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

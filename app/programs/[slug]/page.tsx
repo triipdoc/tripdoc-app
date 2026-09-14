@@ -1,21 +1,136 @@
-import CopyLinkButton from "./CopyLinkButton";
-import { supabase } from "../../../lib/supabase";
 import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import CopyLinkButton from "./CopyLinkButton";
 import StickyApplyBar from "./StickyApplyBar";
 import ApplyNowButton from "./ApplyNowButton";
 import ProgramImage from "../../components/ProgramImage";
+import SafeMarkdown from "../../components/SafeMarkdown";
 import TrackedProgramLink from "../../components/TrackedProgramLink";
 import { socialLinkItems } from "../../components/socialLinks";
+import { supabase } from "../../../lib/supabase";
+import {
+  ApplicationStep,
+  isDeadlinePassed,
+  isPublicProgramDetailVisible,
+  isPublicProgramListVisible,
+  SourceLink,
+} from "../../../lib/opportunityPrograms";
 
 const SITE_URL = "https://app.tripdoc.net";
 
-function toCountrySlug(country: string) {
-  return country.toLowerCase().trim().replace(/\s+/g, "-");
+type Program = {
+  id: string;
+  title: string;
+  slug: string | null;
+  organisation: string | null;
+  country: string | null;
+  type: string | null;
+  funding_type: string | null;
+  deadline: string | null;
+  deadline_mode: string | null;
+  deadline_time: string | null;
+  deadline_timezone: string | null;
+  official_url: string | null;
+  additional_application_steps: ApplicationStep[] | null;
+  image_url: string | null;
+  image_alt: string | null;
+  description: string | null;
+  publishing_status: string | null;
+  verification_status: string | null;
+  availability_status: string | null;
+  featured?: boolean | null;
+  funding_amount: number | null;
+  funding_currency: string | null;
+  funding_coverage: string | null;
+  applicant_costs: string | null;
+  official_source_links: SourceLink[] | null;
+  reviewer_name: string | null;
+  verified_at: string | null;
+  evidence_notes: string | null;
+  sponsorship_status: string | null;
+  sponsorship_evidence: string | null;
+  sponsorship_source_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+};
+
+type RelatedProgram = {
+  id: string;
+  title: string;
+  slug: string | null;
+  country: string | null;
+  funding_type: string | null;
+  type: string | null;
+  verification_status: string | null;
+  publishing_status?: string | null;
+  availability_status?: string | null;
+  deadline?: string | null;
+  deadline_mode?: string | null;
+};
+
+const infoCardStyle = {
+  background: "#fafafa",
+  border: "1px solid #eef0f3",
+  borderRadius: 12,
+  padding: 16,
+} as const;
+
+function toSlug(value: string) {
+  return value.toLowerCase().trim().replace(/\s+/g, "-");
 }
 
-function toTypeSlug(type: string) {
-  return type.toLowerCase().trim().replace(/\s+/g, "-");
+function labelize(value?: string | null) {
+  if (!value) return "Unknown";
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatDeadline(program: Pick<Program, "deadline" | "deadline_mode" | "deadline_time" | "deadline_timezone">) {
+  if (program.deadline_mode === "rolling") return "Rolling applications";
+  if (program.deadline_mode === "unknown" || !program.deadline) return "Not listed";
+
+  const parts = [program.deadline];
+  if (program.deadline_time) parts.push(program.deadline_time.slice(0, 5));
+  if (program.deadline_timezone) parts.push(program.deadline_timezone);
+  return parts.join(" ");
+}
+
+function formatMoney(amount?: number | null, currency?: string | null) {
+  if (amount === null || amount === undefined) return null;
+  return `${currency ? `${currency} ` : ""}${amount.toLocaleString("en-GB")}`;
+}
+
+function titleWithBrand(value: string) {
+  return /tripdoc/i.test(value) ? value : `${value} | TripDoc`;
+}
+
+function getApplicationSteps(value: Program["additional_application_steps"]) {
+  return Array.isArray(value) ? value : [];
+}
+
+function getSourceLinks(value: Program["official_source_links"]) {
+  return Array.isArray(value) ? value : [];
+}
+
+async function getProgramBySlug(slug: string) {
+  const { data } = await supabase
+    .from("program_public_view")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  return data as Program | null;
 }
 
 export async function generateMetadata({
@@ -24,32 +139,22 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const data = await getProgramBySlug(slug);
 
-  const { data } = await supabase
-    .from("programs")
-    .select("title, country, funding_type, type, image_url, description")
-    .eq("slug", slug)
-    .single();
-
-  if (!data) {
+  if (!data || !isPublicProgramDetailVisible(data)) {
     return {
       title: "Opportunity Not Found | TripDoc",
       description: "The requested opportunity could not be found on TripDoc.",
-      alternates: {
-        canonical: `${SITE_URL}/programs/${slug}`,
-      },
+      alternates: { canonical: `${SITE_URL}/programs/${slug}` },
     };
   }
 
-  const title = `${data.title} | TripDoc`;
-
+  const title = titleWithBrand(data.seo_title?.trim() || data.title);
   const description =
-    data.description?.trim().slice(0, 160) ||
-    `Apply for ${data.title}${data.country ? ` in ${data.country}` : ""}${
-      data.funding_type ? `. Funding: ${data.funding_type}` : ""
-    }${data.type ? `. Type: ${data.type}` : ""}. Find deadline, official link, and full details on TripDoc.`;
-
-  const pageUrl = `${SITE_URL}/programs/${slug}`;
+    data.seo_description?.trim() ||
+    data.description?.replace(/[#*_`[\]()]/g, "").trim().slice(0, 160) ||
+    `View ${data.title}${data.country ? ` in ${data.country}` : ""} on TripDoc.`;
+  const pageUrl = `${SITE_URL}/programs/${data.slug || slug}`;
 
   return {
     title,
@@ -65,16 +170,14 @@ export async function generateMetadata({
       "opportunities",
       "TripDoc",
     ].filter(Boolean),
-    alternates: {
-      canonical: pageUrl,
-    },
+    alternates: { canonical: pageUrl },
     openGraph: {
       title,
       description,
       url: pageUrl,
       siteName: "TripDoc",
       type: "article",
-      images: data.image_url ? [{ url: data.image_url, alt: data.title }] : [],
+      images: data.image_url ? [{ url: data.image_url, alt: data.image_alt || data.title }] : [],
     },
     twitter: {
       card: "summary_large_image",
@@ -85,141 +188,73 @@ export async function generateMetadata({
   };
 }
 
-type Program = {
-  id: string;
-  title: string;
-  slug: string | null;
-  country: string | null;
-  type: string | null;
-  funding_type: string | null;
-  deadline: string | null;
-  official_url: string | null;
-  image_url: string | null;
-  description: string | null;
-  verification_status: string | null;
-};
+async function getRedirectedSlug(slug: string) {
+  const { data } = await supabase
+    .from("program_slug_redirects")
+    .select("program_id")
+    .eq("old_slug", slug)
+    .maybeSingle();
 
-type RelatedProgram = {
-  id: string;
-  title: string;
-  slug: string | null;
-  country: string | null;
-  funding_type: string | null;
-  type: string | null;
-  verification_status: string | null;
-};
+  if (!data?.program_id) return null;
 
-const infoCardStyle = {
-  background: "#fafafa",
-  border: "1px solid #eef0f3",
-  borderRadius: 12,
-  padding: 16,
-} as const;
+  const { data: program } = await supabase
+    .from("program_public_view")
+    .select("slug,publishing_status")
+    .eq("id", data.program_id)
+    .maybeSingle();
 
-function renderInlineFormatting(text: string) {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-
-  return parts.map((part, index) => {
-    const isBold = /^\*\*.*\*\*$/.test(part);
-
-    if (isBold) {
-      const cleanText = part.replace(/^\*\*/, "").replace(/\*\*$/, "");
-      return <strong key={index}>{cleanText}</strong>;
-    }
-
-    return <span key={index}>{part}</span>;
-  });
+  if (program?.slug && program.publishing_status !== "draft") return program.slug;
+  return null;
 }
 
-function renderDescription(content: string) {
-  const lines = content.split("\n");
+async function getRelatedPrograms(program: Program) {
+  const relatedPrograms: RelatedProgram[] = [];
 
-  return lines.map((line, index) => {
-    const trimmed = line.trim();
+  async function addFromQuery(field: "country" | "type" | "funding_type", value?: string | null) {
+    if (!value || relatedPrograms.length >= 3) return;
 
-    if (!trimmed) {
-      return <div key={index} style={{ height: 12 }} />;
+    const { data } = await supabase
+      .from("program_public_view")
+      .select("id,title,slug,country,funding_type,type,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+      .eq("publishing_status", "published")
+      .neq("id", program.id)
+      .eq(field, value)
+      .limit(3 - relatedPrograms.length);
+
+    for (const item of data || []) {
+      if (
+        isPublicProgramListVisible(item) &&
+        !relatedPrograms.find((existing) => existing.id === item.id)
+      ) {
+        relatedPrograms.push(item);
+      }
     }
+  }
 
-    const isBullet = trimmed.startsWith("- ");
-    const isNumbered = /^\d+\.\s/.test(trimmed);
-    const isHeading =
-      trimmed.endsWith(":") &&
-      trimmed.length < 80 &&
-      !isBullet &&
-      !isNumbered;
+  await addFromQuery("country", program.country);
+  await addFromQuery("type", program.type);
+  await addFromQuery("funding_type", program.funding_type);
 
-    if (isHeading) {
-      return (
-        <h3
-          key={index}
-          style={{
-            margin: "20px 0 10px",
-            fontSize: 20,
-            fontWeight: 800,
-            color: "#111",
-          }}
-        >
-          {renderInlineFormatting(trimmed)}
-        </h3>
-      );
+  if (relatedPrograms.length < 3) {
+    const { data } = await supabase
+      .from("program_public_view")
+      .select("id,title,slug,country,funding_type,type,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+      .eq("publishing_status", "published")
+      .neq("id", program.id)
+      .order("created_at", { ascending: false })
+      .limit(3 - relatedPrograms.length);
+
+    for (const item of data || []) {
+      if (
+        isPublicProgramListVisible(item) &&
+        !relatedPrograms.find((existing) => existing.id === item.id)
+      ) {
+        relatedPrograms.push(item);
+      }
     }
+  }
 
-    if (isBullet) {
-      return (
-        <div
-          key={index}
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 10,
-            marginBottom: 10,
-            color: "#333",
-            lineHeight: 1.8,
-          }}
-        >
-          <span style={{ fontWeight: 700 }}>•</span>
-          <span>{renderInlineFormatting(trimmed.slice(2))}</span>
-        </div>
-      );
-    }
-
-    if (isNumbered) {
-      const match = trimmed.match(/^(\d+\.)\s(.*)$/);
-
-      return (
-        <div
-          key={index}
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 10,
-            marginBottom: 10,
-            color: "#333",
-            lineHeight: 1.8,
-          }}
-        >
-          <span style={{ fontWeight: 700, minWidth: 26 }}>
-            {match?.[1] || ""}
-          </span>
-          <span>{renderInlineFormatting(match?.[2] || trimmed)}</span>
-        </div>
-      );
-    }
-
-    return (
-      <p
-        key={index}
-        style={{
-          margin: "0 0 12px",
-          lineHeight: 1.8,
-          color: "#333",
-        }}
-      >
-        {renderInlineFormatting(trimmed)}
-      </p>
-    );
-  });
+  return relatedPrograms;
 }
 
 export default async function ProgramDetailPage({
@@ -228,128 +263,31 @@ export default async function ProgramDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  let program = await getProgramBySlug(slug);
 
-  const { data, error } = await supabase
-    .from("programs")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  if (error || !data) {
-    return (
-      <main
-        style={{
-          padding: 40,
-          fontFamily: "Arial",
-          maxWidth: 900,
-          margin: "0 auto",
-        }}
-      >
-        <Link
-          href="/programs"
-          style={{
-            display: "inline-block",
-            marginBottom: 20,
-            textDecoration: "none",
-            color: "#0070f3",
-            fontWeight: 600,
-          }}
-        >
-          ← Back to programs
-        </Link>
-
-        <div
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 18,
-            padding: 24,
-            background: "#fff",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-          }}
-        >
-          <h1 style={{ marginTop: 0, marginBottom: 10 }}>Program not found</h1>
-          <p style={{ margin: 0, color: "#555", lineHeight: 1.7 }}>
-            The opportunity you are looking for may have been removed, renamed,
-            or the link may be incorrect.
-          </p>
-        </div>
-      </main>
-    );
+  if (!program) {
+    const redirectedSlug = await getRedirectedSlug(slug);
+    if (redirectedSlug) redirect(`/programs/${redirectedSlug}`);
   }
 
-  const program = data as Program;
-
-  let relatedPrograms: RelatedProgram[] = [];
-
-  if (program.country) {
-    const { data } = await supabase
-      .from("programs")
-      .select("id,title,slug,country,funding_type,type,verification_status")
-      .eq("verification_status", "verified")
-      .neq("id", program.id)
-      .eq("country", program.country)
-      .limit(3);
-
-    relatedPrograms = data || [];
+  if (!program || !isPublicProgramDetailVisible(program)) {
+    notFound();
   }
 
-  if (relatedPrograms.length < 3 && program.type) {
-    const { data } = await supabase
-      .from("programs")
-      .select("id,title,slug,country,funding_type,type,verification_status")
-      .eq("verification_status", "verified")
-      .neq("id", program.id)
-      .eq("type", program.type)
-      .limit(3 - relatedPrograms.length);
-
-    relatedPrograms = [
-      ...relatedPrograms,
-      ...(data || []).filter(
-        (item) => !relatedPrograms.find((p) => p.id === item.id)
-      ),
-    ];
-  }
-
-  if (relatedPrograms.length < 3 && program.funding_type) {
-    const { data } = await supabase
-      .from("programs")
-      .select("id,title,slug,country,funding_type,type,verification_status")
-      .eq("verification_status", "verified")
-      .neq("id", program.id)
-      .eq("funding_type", program.funding_type)
-      .limit(3 - relatedPrograms.length);
-
-    relatedPrograms = [
-      ...relatedPrograms,
-      ...(data || []).filter(
-        (item) => !relatedPrograms.find((p) => p.id === item.id)
-      ),
-    ];
-  }
-
-  if (relatedPrograms.length < 3) {
-    const { data } = await supabase
-      .from("programs")
-      .select("id,title,slug,country,funding_type,type,verification_status")
-      .eq("verification_status", "verified")
-      .neq("id", program.id)
-      .order("created_at", { ascending: false })
-      .limit(3 - relatedPrograms.length);
-
-    relatedPrograms = [
-      ...relatedPrograms,
-      ...(data || []).filter(
-        (item) => !relatedPrograms.find((p) => p.id === item.id)
-      ),
-    ];
-  }
-
+  const relatedPrograms = await getRelatedPrograms(program);
   const programUrl = `${SITE_URL}/programs/${program.slug}`;
+  const applicationSteps = getApplicationSteps(program.additional_application_steps);
+  const sourceLinks = getSourceLinks(program.official_source_links);
+  const requiredSteps = applicationSteps.filter((step) => step.required);
   const hasOfficialUrl = Boolean(program.official_url);
+  const deadlinePassed = isDeadlinePassed(
+    program.deadline,
+    program.deadline_mode || "fixed_date"
+  );
   const isWeltwaertsSouthNorth =
     program.slug === "weltwaerts-south-north-volunteer-germany";
   const officialCtaLabel = isWeltwaertsSouthNorth
-    ? "Find your country’s official weltwärts organisation"
+    ? "Find your country's official weltwaerts organisation"
     : "Apply Now";
 
   return (
@@ -365,7 +303,7 @@ export default async function ProgramDetailPage({
             fontWeight: 600,
           }}
         >
-          ← Back to programs
+          Back to programs
         </Link>
 
         <h1
@@ -391,52 +329,33 @@ export default async function ProgramDetailPage({
             fontWeight: 600,
           }}
         >
+          {program.organisation && <span>Organisation: {program.organisation}</span>}
           {program.country && (
             <span>
-              🌍{" "}
-              <Link
-                href={`/countries/${toCountrySlug(program.country)}`}
-                style={{
-                  color: "#0070f3",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}
-              >
+              Country:{" "}
+              <Link href={`/countries/${toSlug(program.country)}`} style={{ color: "#0070f3" }}>
                 {program.country}
               </Link>
             </span>
           )}
           {program.type && (
             <span>
-              📚{" "}
-              <Link
-                href={`/types/${toTypeSlug(program.type)}`}
-                style={{
-                  color: "#0070f3",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}
-              >
+              Type:{" "}
+              <Link href={`/types/${toSlug(program.type)}`} style={{ color: "#0070f3" }}>
                 {program.type}
               </Link>
             </span>
           )}
           {program.funding_type && (
-  <span>
-    💰{" "}
-    <Link
-      href={`/funding/${toCountrySlug(program.funding_type)}`}
-      style={{
-        color: "#0070f3",
-        textDecoration: "none",
-        fontWeight: 600,
-      }}
-    >
-      {program.funding_type}
-    </Link>
-  </span>
-)}
-          {program.deadline && <span>📅 Deadline: {program.deadline}</span>}
+            <span>
+              Funding:{" "}
+              <Link href={`/funding/${toSlug(program.funding_type)}`} style={{ color: "#0070f3" }}>
+                {program.funding_type}
+              </Link>
+            </span>
+          )}
+          <span>{formatDeadline(program)}</span>
+          {deadlinePassed && <span>Deadline passed</span>}
         </div>
 
         {isWeltwaertsSouthNorth && (
@@ -452,8 +371,8 @@ export default async function ProgramDetailPage({
               fontWeight: 650,
             }}
           >
-            <strong>Important:</strong> Applicants should not contact weltwärts
-            Germany directly. Applicants must use the official weltwärts
+            <strong>Important:</strong> Applicants should not contact weltwaerts
+            Germany directly. Applicants must use the official weltwaerts
             organisation finder to identify the correct sending organisation or
             partner route for their home country.
           </div>
@@ -473,21 +392,19 @@ export default async function ProgramDetailPage({
           >
             <ProgramImage
               src={program.image_url}
-              alt={program.title}
+              alt={program.image_alt || program.title}
               width={1200}
               height={675}
               sizes="(max-width: 768px) 100vw, 900px"
               priority
               borderRadius={0}
               marginBottom={0}
-              style={{
-                height: 320,
-              }}
+              style={{ height: 320 }}
             />
           </div>
         )}
 
-        <div
+        <section
           style={{
             marginBottom: 32,
             border: "1px solid #e5e7eb",
@@ -497,13 +414,7 @@ export default async function ProgramDetailPage({
             boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
           }}
         >
-          <h2
-            style={{
-              marginTop: 0,
-              marginBottom: 16,
-              fontSize: 22,
-            }}
-          >
+          <h2 style={{ marginTop: 0, marginBottom: 16, fontSize: 22 }}>
             Quick Overview
           </h2>
 
@@ -516,107 +427,41 @@ export default async function ProgramDetailPage({
           >
             <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Country
+                Availability
               </div>
-              <div style={{ fontWeight: 600 }}>
-                {program.country ? (
-                  <>
-                    🌍{" "}
-                    <Link
-                      href={`/countries/${toCountrySlug(program.country)}`}
-                      style={{
-                        color: "#0070f3",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {program.country}
-                    </Link>
-                  </>
-                ) : (
-                  "—"
-                )}
+              <div style={{ fontWeight: 700 }}>
+                {deadlinePassed
+                  ? "Closed - deadline passed"
+                  : labelize(program.availability_status)}
               </div>
-            </div>
-
-            <div style={infoCardStyle}>
-              <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Type
-              </div>
-              <div style={{ fontWeight: 600 }}>
-                {program.type ? (
-                  <>
-                    📚{" "}
-                    <Link
-                      href={`/types/${toTypeSlug(program.type)}`}
-                      style={{
-                        color: "#0070f3",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {program.type}
-                    </Link>
-                  </>
-                ) : (
-                  "—"
-                )}
-              </div>
-            </div>
-
-            <div style={infoCardStyle}>
-              <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Funding
-              </div>
-             <div style={{ fontWeight: 600 }}>
-  {program.funding_type ? (
-    <>
-      💰{" "}
-      <Link
-        href={`/funding/${toCountrySlug(program.funding_type)}`}
-        style={{
-          color: "#0070f3",
-          textDecoration: "none",
-          fontWeight: 600,
-        }}
-      >
-        {program.funding_type}
-      </Link>
-    </>
-  ) : (
-    "—"
-  )}
-</div>
             </div>
 
             <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Deadline
               </div>
-              <div style={{ fontWeight: 600 }}>📅 {program.deadline || "—"}</div>
+              <div style={{ fontWeight: 700 }}>{formatDeadline(program)}</div>
             </div>
 
             <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
                 Verification
               </div>
-              <div style={{ fontWeight: 600 }}>
-                {program.verification_status === "verified"
-                  ? "✅ Verified"
-                  : "⏳ Pending"}
+              <div style={{ fontWeight: 700 }}>
+                {labelize(program.verification_status)}
               </div>
             </div>
 
             <div style={infoCardStyle}>
               <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>
-                Official Link
+                Primary application link
               </div>
-              <div style={{ fontWeight: 600 }}>
-                {hasOfficialUrl ? "🔗 Available" : "— Not added yet"}
+              <div style={{ fontWeight: 700 }}>
+                {hasOfficialUrl ? "Available" : "Not listed"}
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <div style={{ marginBottom: 20 }}>
           {program.verification_status === "verified" ? (
@@ -626,10 +471,22 @@ export default async function ProgramDetailPage({
                 borderRadius: 6,
                 background: "#e8f7ee",
                 color: "#0a7a33",
-                fontWeight: 600,
+                fontWeight: 700,
               }}
             >
-              ✅ Verified Opportunity
+              Verified Opportunity
+            </span>
+          ) : program.verification_status === "conflicting_evidence" ? (
+            <span
+              style={{
+                padding: "6px 12px",
+                borderRadius: 6,
+                background: "#fff1f2",
+                color: "#be123c",
+                fontWeight: 700,
+              }}
+            >
+              Conflicting evidence
             </span>
           ) : (
             <span
@@ -638,10 +495,10 @@ export default async function ProgramDetailPage({
                 borderRadius: 6,
                 background: "#fff4e5",
                 color: "#a05a00",
-                fontWeight: 600,
+                fontWeight: 700,
               }}
             >
-              ⏳ Verification Pending
+              Needs review
             </span>
           )}
         </div>
@@ -679,10 +536,7 @@ export default async function ProgramDetailPage({
             </Link>
           )}
 
-          <CopyLinkButton
-            programId={program.id}
-            title={program.title}
-          />
+          <CopyLinkButton programId={program.id} title={program.title} />
 
           <a
             href={`https://wa.me/?text=${encodeURIComponent(
@@ -696,7 +550,7 @@ export default async function ProgramDetailPage({
               color: "white",
               borderRadius: 8,
               textDecoration: "none",
-              fontWeight: 600,
+              fontWeight: 700,
             }}
           >
             WhatsApp
@@ -714,14 +568,164 @@ export default async function ProgramDetailPage({
               color: "white",
               borderRadius: 10,
               textDecoration: "none",
-              fontWeight: 600,
+              fontWeight: 700,
             }}
           >
             LinkedIn
           </a>
         </div>
 
-        <div
+        {applicationSteps.length > 0 && (
+          <section
+            style={{
+              marginBottom: 32,
+              border:
+                requiredSteps.length > 0 ? "1px solid #bfdbfe" : "1px solid #e5e7eb",
+              borderRadius: 18,
+              padding: 22,
+              background: requiredSteps.length > 0 ? "#f8fbff" : "#fff",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+            }}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: 14, fontSize: 22 }}>
+              Application Steps
+            </h2>
+            <div style={{ display: "grid", gap: 12 }}>
+              {applicationSteps.map((step, index) => (
+                <div
+                  key={step.id || index}
+                  style={{
+                    padding: 16,
+                    borderRadius: 12,
+                    border: "1px solid #dbe7ff",
+                    background: "white",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <strong>{step.label}</strong>
+                    <span
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: step.required ? "#dbeafe" : "#f3f4f6",
+                        color: step.required ? "#1d4ed8" : "#4b5563",
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {step.required ? "Required" : "Optional"}
+                    </span>
+                  </div>
+                  {step.instructions && (
+                    <p style={{ margin: "0 0 10px", color: "#374151", lineHeight: 1.7 }}>
+                      {step.instructions}
+                    </p>
+                  )}
+                  {step.url && (
+                    <a
+                      href={step.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#0070f3", fontWeight: 800 }}
+                    >
+                      Open step link
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section
+          style={{
+            marginBottom: 32,
+            border: "1px solid #e5e7eb",
+            borderRadius: 18,
+            padding: 22,
+            background: "#fff",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: 14, fontSize: 22 }}>
+            Funding and Verification Details
+          </h2>
+          <div style={{ display: "grid", gap: 12, color: "#333", lineHeight: 1.7 }}>
+            {formatMoney(program.funding_amount, program.funding_currency) && (
+              <div>
+                <strong>Confirmed amount:</strong>{" "}
+                {formatMoney(program.funding_amount, program.funding_currency)}
+              </div>
+            )}
+            {program.funding_coverage && (
+              <div>
+                <strong>Coverage:</strong> {program.funding_coverage}
+              </div>
+            )}
+            {program.applicant_costs && (
+              <div>
+                <strong>Applicant costs:</strong> {program.applicant_costs}
+              </div>
+            )}
+            {program.type?.toLowerCase() === "job" && (
+              <div>
+                <strong>Sponsorship:</strong> {labelize(program.sponsorship_status)}
+                {program.sponsorship_source_url && (
+                  <>
+                    {" "}
+                    <a
+                      href={program.sponsorship_source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#0070f3", fontWeight: 700 }}
+                    >
+                      Source
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
+            {program.evidence_notes && (
+              <div>
+                <strong>Evidence note:</strong> {program.evidence_notes}
+              </div>
+            )}
+            {program.verified_at && (
+              <div>
+                <strong>Verified on:</strong> {formatDate(program.verified_at)}
+              </div>
+            )}
+            {sourceLinks.length > 0 && (
+              <div>
+                <strong>Official sources:</strong>
+                <ul style={{ margin: "8px 0 0", paddingLeft: 22 }}>
+                  {sourceLinks.map((source) => (
+                    <li key={source.id}>
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#0070f3", fontWeight: 700 }}
+                      >
+                        {source.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section
           style={{
             marginBottom: 32,
             border: "1px solid #e5e7eb",
@@ -731,64 +735,32 @@ export default async function ProgramDetailPage({
             boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
           }}
         >
-          <h2
-            style={{
-              marginTop: 0,
-              marginBottom: 14,
-              fontSize: 22,
-            }}
-          >
+          <h2 style={{ marginTop: 0, marginBottom: 14, fontSize: 22 }}>
             Apply Safely
           </h2>
-
           <div style={{ display: "grid", gap: 12 }}>
-            <div
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: "#f8fafc",
-                border: "1px solid #eef2f7",
-              }}
-            >
-              ✅ Always apply through the official website link provided above.
-            </div>
-
-            <div
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: "#f8fafc",
-                border: "1px solid #eef2f7",
-              }}
-            >
-              ⚠️ Never pay unofficial agents or third parties claiming guaranteed selection.
-            </div>
-
-            <div
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: "#f8fafc",
-                border: "1px solid #eef2f7",
-              }}
-            >
-              📅 Always confirm the deadline and eligibility on the official source before applying.
-            </div>
-
-            <div
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: "#f8fafc",
-                border: "1px solid #eef2f7",
-              }}
-            >
-              🔍 TripDoc helps you discover opportunities, but final application details should always be verified on the source website.
-            </div>
+            {[
+              "Always apply through the official website or required application steps provided above.",
+              "Never pay unofficial agents or third parties claiming guaranteed selection.",
+              "Always confirm the deadline, eligibility and fees on the official source before applying.",
+              "TripDoc helps you discover opportunities, but final application details should always be verified on the source website.",
+            ].map((text) => (
+              <div
+                key={text}
+                style={{
+                  padding: 14,
+                  borderRadius: 12,
+                  background: "#f8fafc",
+                  border: "1px solid #eef2f7",
+                }}
+              >
+                {text}
+              </div>
+            ))}
           </div>
-        </div>
+        </section>
 
-        <div
+        <section
           style={{
             marginBottom: 32,
             border: "1px solid #e5e7eb",
@@ -835,9 +807,9 @@ export default async function ProgramDetailPage({
               </a>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div
+        <section
           style={{
             border: "1px solid #e5e7eb",
             borderRadius: 18,
@@ -848,32 +820,18 @@ export default async function ProgramDetailPage({
           }}
         >
           <h2 style={{ marginTop: 0, marginBottom: 16 }}>Program Description</h2>
-
-          <div
-            style={{
-              color: "#333",
-              fontSize: 16,
-            }}
-          >
-            {program.description?.trim() ? (
-              renderDescription(program.description)
-            ) : (
-              <p
-                style={{
-                  margin: 0,
-                  lineHeight: 1.8,
-                  color: "#555",
-                }}
-              >
-                Full description has not been added yet. You can still use the
-                official link above to check the complete opportunity details.
-              </p>
-            )}
-          </div>
-        </div>
+          {program.description?.trim() ? (
+            <SafeMarkdown content={program.description} />
+          ) : (
+            <p style={{ margin: 0, lineHeight: 1.8, color: "#555" }}>
+              Full description has not been added yet. You can still use the
+              official link above to check the complete opportunity details.
+            </p>
+          )}
+        </section>
 
         {relatedPrograms.length > 0 && (
-          <div
+          <section
             style={{
               marginTop: 0,
               border: "1px solid #e5e7eb",
@@ -884,7 +842,6 @@ export default async function ProgramDetailPage({
             }}
           >
             <h2 style={{ marginTop: 0, marginBottom: 16 }}>Related Opportunities</h2>
-
             <div style={{ display: "grid", gap: 16 }}>
               {relatedPrograms.map((item) =>
                 item.slug ? (
@@ -902,15 +859,15 @@ export default async function ProgramDetailPage({
                       background: "#fafafa",
                     }}
                   >
-                    <div style={{ fontWeight: 600, marginBottom: 6 }}>{item.title}</div>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>{item.title}</div>
                     <div style={{ color: "#555", fontSize: 14 }}>
-                      {item.country || "—"} • {item.funding_type || "—"}
+                      {item.country || "-"} - {item.funding_type || "-"}
                     </div>
                   </TrackedProgramLink>
                 ) : null
               )}
             </div>
-          </div>
+          </section>
         )}
       </div>
 
@@ -918,9 +875,7 @@ export default async function ProgramDetailPage({
         title={program.title}
         url={program.official_url}
         label={
-          isWeltwaertsSouthNorth
-            ? "Find official organisation"
-            : "Apply Now ↗"
+          isWeltwaertsSouthNorth ? "Find official organisation" : "Apply Now"
         }
       />
     </main>

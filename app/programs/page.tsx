@@ -1,4 +1,5 @@
 import { supabase } from "../../lib/supabase";
+import { isPublicProgramListVisible } from "../../lib/opportunityPrograms";
 import ProgramsClient from "./ProgramsClient";
 
 type Program = {
@@ -12,6 +13,9 @@ type Program = {
   official_url: string | null;
   image_url: string | null;
   verification_status: string | null;
+  publishing_status?: string | null;
+  availability_status?: string | null;
+  deadline_mode?: string | null;
   created_at?: string | null;
   featured?: boolean | null;
 };
@@ -182,13 +186,13 @@ export default async function ProgramsPage({
   ].includes(sort);
 
   const baseSelect =
-    "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,created_at,featured";
+    "id,title,slug,country,type,funding_type,deadline,official_url,image_url,verification_status,publishing_status,availability_status,deadline_mode,created_at,featured";
 
   if (!needsAnalyticsSort) {
     let query = supabase
-      .from("programs")
+      .from("program_public_view")
       .select(baseSelect, { count: "exact" })
-      .eq("verification_status", "verified");
+      .eq("publishing_status", "published");
 
     if (q) {
       query = query.or(
@@ -208,14 +212,17 @@ export default async function ProgramsPage({
       query = query.eq("funding_type", funding);
     }
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
       console.error("Programs page error:", error.message);
     }
 
-    const allPrograms = orderProgramsBySort((data || []) as Program[], sort);
-    const totalPrograms = count ?? allPrograms.length;
+    const allPrograms = orderProgramsBySort(
+      ((data || []) as Program[]).filter(isPublicProgramListVisible),
+      sort
+    );
+    const totalPrograms = allPrograms.length;
     const totalPages = Math.max(Math.ceil(totalPrograms / PAGE_SIZE), 1);
     const safeCurrentPage = Math.min(currentPage, totalPages);
 
@@ -240,9 +247,9 @@ export default async function ProgramsPage({
   }
 
   let baseQuery = supabase
-    .from("programs")
+    .from("program_public_view")
     .select(baseSelect, { count: "exact" })
-    .eq("verification_status", "verified");
+    .eq("publishing_status", "published");
 
   if (q) {
     baseQuery = baseQuery.or(
@@ -262,13 +269,15 @@ export default async function ProgramsPage({
     baseQuery = baseQuery.eq("funding_type", funding);
   }
 
-  const { data: allProgramsData, error: allProgramsError, count } = await baseQuery;
+  const { data: allProgramsData, error: allProgramsError } = await baseQuery;
 
   if (allProgramsError) {
     console.error("Programs analytics sort error:", allProgramsError.message);
   }
 
-  const allPrograms = (allProgramsData || []) as Program[];
+  const allPrograms = ((allProgramsData || []) as Program[]).filter(
+    isPublicProgramListVisible
+  );
   const filteredProgramIds = new Set(allPrograms.map((program) => program.id));
 
   const now = new Date();
@@ -307,7 +316,7 @@ export default async function ProgramsPage({
 
   const orderedPrograms = orderProgramsByRanking(allPrograms, ranking);
 
-  const totalPrograms = count ?? orderedPrograms.length;
+  const totalPrograms = orderedPrograms.length;
   const totalPages = Math.max(Math.ceil(totalPrograms / PAGE_SIZE), 1);
   const safeCurrentPage = Math.min(currentPage, totalPages);
 

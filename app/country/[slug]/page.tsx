@@ -1,4 +1,5 @@
 import { supabase } from "../../../lib/supabase";
+import { isPublicProgramListVisible } from "../../../lib/opportunityPrograms";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProgramImage from "../../components/ProgramImage";
@@ -11,6 +12,10 @@ type Program = {
   funding_type: string | null;
   image_url: string | null;
   verification_status: string | null;
+  publishing_status?: string | null;
+  availability_status?: string | null;
+  deadline?: string | null;
+  deadline_mode?: string | null;
 };
 
 function formatCountryLabel(value: string) {
@@ -57,9 +62,9 @@ export default async function CountryPage({
   const label = formatCountryLabel(countryName);
 
   const { data, error } = await supabase
-    .from("programs")
-    .select("id,title,slug,country,funding_type,image_url,verification_status")
-    .eq("verification_status", "verified")
+    .from("program_public_view")
+    .select("id,title,slug,country,funding_type,image_url,verification_status,publishing_status,availability_status,deadline,deadline_mode")
+    .eq("publishing_status", "published")
     .eq("country", label)
     .order("created_at", { ascending: false });
 
@@ -86,7 +91,8 @@ export default async function CountryPage({
   }
 
   const programs = (data || []).filter(
-    (p: Program) => p.title && p.slug && p.title.trim() !== ""
+    (p: Program) =>
+      p.title && p.slug && p.title.trim() !== "" && isPublicProgramListVisible(p)
   ) as Program[];
 
   return (
@@ -188,7 +194,11 @@ export default async function CountryPage({
                     background: "#eaffea",
                   }}
                 >
-                  ✅ Verified
+                  {p.verification_status === "verified"
+                    ? "Verified"
+                    : p.verification_status === "conflicting_evidence"
+                    ? "Conflicting evidence"
+                    : "Needs review"}
                 </span>
               </div>
             </Link>

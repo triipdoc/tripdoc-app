@@ -1,4 +1,5 @@
 import { supabase } from "../../../lib/supabase";
+import { isPublicProgramListVisible } from "../../../lib/opportunityPrograms";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProgramImage from "../../components/ProgramImage";
@@ -13,6 +14,9 @@ type Program = {
   deadline: string | null;
   image_url: string | null;
   verification_status: string | null;
+  publishing_status?: string | null;
+  availability_status?: string | null;
+  deadline_mode?: string | null;
   created_at?: string | null;
 };
 
@@ -70,11 +74,11 @@ export default async function TypePage({
     formattedType.toLowerCase().includes("volunteer");
 
   const { data, error } = await supabase
-    .from("programs")
+    .from("program_public_view")
     .select(
-      "id,title,slug,country,type,funding_type,deadline,image_url,verification_status,created_at"
+      "id,title,slug,country,type,funding_type,deadline,image_url,verification_status,publishing_status,availability_status,deadline_mode,created_at"
     )
-    .eq("verification_status", "verified")
+    .eq("publishing_status", "published")
     .ilike("type", formattedType)
     .order("created_at", { ascending: false });
 
@@ -82,7 +86,7 @@ export default async function TypePage({
     console.error("Type page error:", error.message);
   }
 
-  const programs = (data || []) as Program[];
+  const programs = ((data || []) as Program[]).filter(isPublicProgramListVisible);
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>

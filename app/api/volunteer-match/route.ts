@@ -25,6 +25,7 @@ import {
   type VolunteerRouteRecord,
   type VolunteerRuleVersionRecord,
 } from "../../../lib/volunteerMatchSchemas";
+import { isPublicProgramListVisible } from "../../../lib/opportunityPrograms";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,9 @@ type ProgramJoinRow = {
   funding_type?: string | null;
   deadline?: string | null;
   verification_status?: string | null;
+  publishing_status?: string | null;
+  availability_status?: string | null;
+  deadline_mode?: string | null;
 };
 
 type RouteProgramJoinRow = {
@@ -67,7 +71,7 @@ function groupLinkedOpportunities(rows: RouteProgramJoinRow[] = []) {
       !program?.id ||
       !program.title?.trim() ||
       !program.slug?.trim() ||
-      program.verification_status !== "verified"
+      !isPublicProgramListVisible(program)
     ) {
       return;
     }
@@ -134,7 +138,7 @@ async function loadRoutesAndRules() {
   const { data: linkedRows, error: linkedError } = await supabaseAdmin
     .from("volunteer_match_route_programs")
     .select(
-      "route_id,relationship_type,display_order,program:programs(id,title,slug,country,type,funding_type,deadline,verification_status)"
+      "route_id,relationship_type,display_order,program:programs(id,title,slug,country,type,funding_type,deadline,verification_status,publishing_status,availability_status,deadline_mode)"
     )
     .in("route_id", routeIds)
     .order("display_order", { ascending: true });
