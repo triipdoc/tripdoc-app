@@ -150,7 +150,7 @@ export default function ProgramDashboardClient() {
     </section>
     {form && <div ref={editor} className={styles.editor}>
       <div className={styles.heading}><div><h2>{id ? "Edit opportunity" : "New opportunity"}</h2><p>{dirty ? "Unsaved changes" : "No unsaved changes"}</p></div><button disabled={busy} onClick={() => { if (mayLeave()) setForm(null); }}>Close editor</button></div>
-      {error && <p role="alert" className={styles.error}>{error} <a href="/manage-tripdoc/login" target="_blank" rel="noreferrer">Sign in in another tab</a></p>}
+      {error && <p role="alert" className={styles.error}>{error} {/admin session|unauthorized/i.test(error) && <a href="/manage-tripdoc/login" target="_blank" rel="noreferrer">Sign in in another tab</a>}</p>}
       {message && <p role="status" className={styles.message}>{message}</p>}
       <div className={styles.tabs} aria-label="Editor sections">{sections.map(tab => <button key={tab} type="button" aria-pressed={section === tab} onClick={() => setSection(tab)}>{tab}</button>)}</div>
       <form onSubmit={event => { event.preventDefault(); void save(); }}>

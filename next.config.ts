@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The admin upload route imports Sharp directly. Include its Linux native
+  // binaries in the Vercel function even when this lockfile was installed on
+  // another operating system.
+  outputFileTracingIncludes: {
+    "/api/admin/program-images": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
+  },
   images: {
     remotePatterns: [
       {
