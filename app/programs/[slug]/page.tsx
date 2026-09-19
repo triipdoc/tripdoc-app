@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import CopyLinkButton from "./CopyLinkButton";
 import StickyApplyBar from "./StickyApplyBar";
@@ -267,7 +267,7 @@ export default async function ProgramDetailPage({
 
   if (!program) {
     const redirectedSlug = await getRedirectedSlug(slug);
-    if (redirectedSlug) redirect(`/programs/${redirectedSlug}`);
+    if (redirectedSlug) permanentRedirect(`/programs/${redirectedSlug}`);
   }
 
   if (!program || !isPublicProgramDetailVisible(program)) {
