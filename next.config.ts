@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
       "./node_modules/@img/sharp-libvips-linux-x64/**/*",
     ],
   },
+  async redirects() {
+  return [
+    {
+      source: "/types/researchers/-academics",
+      destination: "/types/research",
+      permanent: true,
+    },
+  ];
+},
   images: {
     remotePatterns: [
       {
