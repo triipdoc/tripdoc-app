@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { supabase } from "../lib/supabase";
 import { isPublicProgramListVisible } from "../lib/opportunityPrograms";
 
+export const revalidate = 3600;
+
 type SitemapProgram = {
   slug: string | null;
   country: string | null;
