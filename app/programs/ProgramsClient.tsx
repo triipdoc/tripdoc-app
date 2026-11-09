@@ -1,5 +1,7 @@
 "use client";
 
+import { browseSlug } from "../../lib/browseUrls";
+
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -44,11 +46,11 @@ const sortOptions = [
 ];
 
 function toCountrySlug(country: string) {
-  return country.toLowerCase().trim().replace(/\s+/g, "-");
+  return browseSlug(country);
 }
 
 function toTypeSlug(type: string) {
-  return type.toLowerCase().trim().replace(/\s+/g, "-");
+  return browseSlug(type);
 }
 
 function toFundingSlug(funding: string) {

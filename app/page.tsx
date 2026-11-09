@@ -1,3 +1,4 @@
+import { browseSlug } from "../lib/browseUrls";
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
@@ -74,7 +75,7 @@ const featuredCardStyle = {
 } as const;
 
 function toCountrySlug(country: string) {
-  return country.toLowerCase().trim().replace(/\s+/g, "-");
+  return browseSlug(country);
 }
 
 function toFundingSlug(funding: string) {

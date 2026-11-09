@@ -1,3 +1,4 @@
+import { canonicalBrowsePath } from "./lib/browseUrls";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -5,6 +6,15 @@ import { ADMIN_COOKIE_NAME, verifyAdminSession, isSameOriginRequest } from "./li
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  const browsePath = canonicalBrowsePath(pathname);
+  if (browsePath) {
+    if (pathname !== browsePath) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = browsePath;
+      return NextResponse.redirect(destination, 308);
+    }
+    return NextResponse.next();
+  }
   const authCookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
 
   const isAdminPageRoute = pathname.startsWith("/manage-tripdoc");
@@ -37,5 +47,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/manage-tripdoc", "/manage-tripdoc/:path*", "/api/admin/:path*", "/api/admin-analytics"],
+  matcher: ["/category/:path*", "/country/:path*", "/types/:path*", "/countries/:path*", "/manage-tripdoc", "/manage-tripdoc/:path*", "/api/admin/:path*", "/api/admin-analytics"],
 };

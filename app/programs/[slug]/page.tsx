@@ -1,3 +1,4 @@
+import { browseSlug } from "../../../lib/browseUrls";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
@@ -77,7 +78,7 @@ const infoCardStyle = {
 } as const;
 
 function toSlug(value: string) {
-  return value.toLowerCase().trim().replace(/\s+/g, "-");
+  return browseSlug(value);
 }
 
 function labelize(value?: string | null) {

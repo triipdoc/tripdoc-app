@@ -1,3 +1,4 @@
+import { browseSlug } from "../lib/browseUrls";
 import type { MetadataRoute } from "next";
 import { supabase } from "../lib/supabase";
 import { isPublicProgramListVisible } from "../lib/opportunityPrograms";
@@ -23,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .eq("publishing_status", "published");
 
   if (error) {
-    console.error("Sitemap program query failed; returning static URLs:", error.message);
+    throw new Error("Sitemap program query failed");
   }
 
   const programs = (error ? [] : data || []).filter(
@@ -43,15 +44,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const categoryUrls = Array.from(categories).map((c) => ({
-    url: `${baseUrl}/category/${encodeURIComponent(c)}`,
+    url: `${baseUrl}/types/${browseSlug(c)}`,
   }));
 
   const countryUrls = Array.from(countries).map((c) => ({
-    url: `${baseUrl}/country/${encodeURIComponent(c)}`,
+    url: `${baseUrl}/countries/${browseSlug(c)}`,
   }));
 
   return [
     { url: baseUrl },
+    { url: `${baseUrl}/programs` },
+    { url: `${baseUrl}/about` },
+    { url: `${baseUrl}/contact` },
     { url: `${baseUrl}/hiring-companies` },
     { url: `${baseUrl}/volunteer-match` },
     ...categoryUrls,

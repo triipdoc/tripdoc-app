@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { browseSlug, browseRouteSlug, browsePattern, decodeBrowseValue } from "../../../lib/browseUrls";
 import { supabase } from "../../../lib/supabase";
 import { isPublicProgramListVisible } from "../../../lib/opportunityPrograms";
 import type { Metadata } from "next";
@@ -23,7 +25,7 @@ type Program = {
 const SITE_URL = "https://app.tripdoc.net";
 
 function formatCountryName(value: string) {
-  return decodeURIComponent(value)
+  return decodeBrowseValue(value)
     .replace(/-/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
@@ -40,15 +42,15 @@ export async function generateMetadata({
   const description = `Browse verified scholarships, internships, fellowships, and global opportunities in ${formattedCountry} on TripDoc.`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: {
-      canonical: `${SITE_URL}/countries/${country}`,
+      canonical: `${SITE_URL}/countries/${browseRouteSlug(country)}`,
     },
     openGraph: {
       title,
       description,
-      url: `${SITE_URL}/countries/${country}`,
+      url: `${SITE_URL}/countries/${browseRouteSlug(country)}`,
       siteName: "TripDoc",
       type: "website",
     },
@@ -74,14 +76,16 @@ export default async function CountryPage({
       "id,title,slug,country,type,funding_type,deadline,image_url,verification_status,publishing_status,availability_status,deadline_mode,deadline_time,deadline_timezone,created_at"
     )
     .eq("publishing_status", "published")
-    .ilike("country", formattedCountry)
+    .ilike("country", browsePattern(country))
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Country page error:", error.message);
+    throw new Error("Unable to load countries");
   }
 
-  const programs = ((data || []) as Program[]).filter((program) => isPublicProgramListVisible(program));
+  const programs = ((data || []) as Program[]).filter((program) => program.slug && program.title && isPublicProgramListVisible(program) && browseSlug(program.country || "") === browseRouteSlug(country));
+
+  if (programs.length === 0) notFound();
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>
@@ -122,7 +126,7 @@ export default async function CountryPage({
           fontWeight: 600,
         }}
       >
-        {programs.length} opportunity{programs.length === 1 ? "" : "ies"} found
+        {programs.length} opportunit{programs.length === 1 ? "y" : "ies"} found
       </div>
 
       {programs.length === 0 ? (

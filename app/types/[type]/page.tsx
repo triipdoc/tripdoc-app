@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { browseSlug, browseRouteSlug, browsePattern, decodeBrowseValue } from "../../../lib/browseUrls";
 import { supabase } from "../../../lib/supabase";
 import { isPublicProgramListVisible } from "../../../lib/opportunityPrograms";
 import type { Metadata } from "next";
@@ -23,7 +25,7 @@ type Program = {
 const SITE_URL = "https://app.tripdoc.net";
 
 function formatTypeName(value: string) {
-  return decodeURIComponent(value)
+  return decodeBrowseValue(value)
     .replace(/-/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
@@ -40,15 +42,15 @@ export async function generateMetadata({
   const description = `Browse verified ${formattedType.toLowerCase()} opportunities on TripDoc, including scholarships, internships, fellowships, jobs, and more.`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: {
-      canonical: `${SITE_URL}/types/${type}`,
+      canonical: `${SITE_URL}/types/${browseRouteSlug(type)}`,
     },
     openGraph: {
       title,
       description,
-      url: `${SITE_URL}/types/${type}`,
+      url: `${SITE_URL}/types/${browseRouteSlug(type)}`,
       siteName: "TripDoc",
       type: "website",
     },
@@ -67,7 +69,7 @@ export default async function TypePage({
 }) {
   const { type } = await params;
   const formattedType = formatTypeName(type);
-  const normalizedType = decodeURIComponent(type).toLowerCase().trim();
+  const normalizedType = decodeBrowseValue(type).toLowerCase().trim();
   const isVolunteerType =
     normalizedType === "volunteer" ||
     normalizedType === "volunteering" ||
@@ -79,14 +81,16 @@ export default async function TypePage({
       "id,title,slug,country,type,funding_type,deadline,image_url,verification_status,publishing_status,availability_status,deadline_mode,deadline_time,deadline_timezone,created_at"
     )
     .eq("publishing_status", "published")
-    .ilike("type", formattedType)
+    .ilike("type", browsePattern(type))
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Type page error:", error.message);
+    throw new Error("Unable to load types");
   }
 
-  const programs = ((data || []) as Program[]).filter((program) => isPublicProgramListVisible(program));
+  const programs = ((data || []) as Program[]).filter((program) => program.slug && program.title && isPublicProgramListVisible(program) && browseSlug(program.type || "") === browseRouteSlug(type));
+
+  if (programs.length === 0) notFound();
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 20px 40px" }}>
