@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
       destination: "/types/research",
       permanent: true,
     },
+    {
+      source: "/types/paid-traineeship-/-journalism-training",
+      destination: "/types/paid-traineeship-%2F-journalism-training",
+      permanent: true,
+    },
   ];
 },
   images: {
